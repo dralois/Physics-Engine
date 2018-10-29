@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+# Logfiles
+*.tlog
+
+# Other
+*.pdb
+*.log
+*.idb
+*.iobj
+*.ipdb
+.vs/*
+Win32/*
+x64/*
+x86/*

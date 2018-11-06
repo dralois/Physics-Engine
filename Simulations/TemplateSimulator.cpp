@@ -2,7 +2,7 @@
 
 TemplateSimulator::TemplateSimulator()
 {
-	m_iTestCase = 0;
+	m_iTestCase = 1;
 	m_vfMovableObjectPos = Vec3();
 	m_vfMovableObjectFinalPos = Vec3();
 	m_vfRotate = Vec3();

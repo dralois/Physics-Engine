@@ -23,11 +23,11 @@ void MassSpringSystemSimulator::reset()
 void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 {
 }
-//A
+//B
 void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 {
 }
-//C
+//A
 void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
 }
@@ -35,11 +35,11 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 {
 }
-//B
+//A
 void MassSpringSystemSimulator::onClick(int x, int y)
 {
 }
-//B
+//A
 void MassSpringSystemSimulator::onMouse(int x, int y)
 {
 }

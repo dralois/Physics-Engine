@@ -69,22 +69,36 @@ Vec3 MassSpringSystemSimulator::getVelocityOfMassPoint(int index)
 // Speichere Klickposition
 void MassSpringSystemSimulator::onClick(int x, int y)
 {
-		m_trackmouse.x = x;
-		m_trackmouse.y = y;
+	m_trackmouse.x = x;
+	m_trackmouse.y = y;
 }
 
 // Speichere Mausbewegung
 void MassSpringSystemSimulator::onMouse(int x, int y)
 {
-		m_oldtrackmouse.x = x;
-		m_oldtrackmouse.y = y;
-		m_trackmouse.x = x;
-		m_trackmouse.y = y;
+	m_oldtrackmouse.x = x;
+	m_oldtrackmouse.y = y;
+	m_trackmouse.x = x;
+	m_trackmouse.y = y;
 }
 
 #pragma endregion
 
 #pragma region Functions
+
+#pragma region Internal
+
+// Berechnet Federkraft
+Vec3 X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2)
+{
+	// Aktualisiere Länge
+	spring.CurrentLenght = sqrt((float) point1.squaredDistanceTo(point2));
+	// F_ij = -k * (l - L) * (x_i - x_j) / l
+	return spring.Stiffness * (spring.CurrentLenght - spring.InitLenght) *
+			((point1 - point2) / spring.CurrentLenght);
+}
+
+#pragma endregion
 
 // TODO
 // Initialisiere HUD je nach Demo
@@ -159,12 +173,10 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 			// Aktualisiere Längen und Kräfte
 			for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 			{
-				spring->CurrentLenght = sqrt((float) spring->Point1.Position.squaredDistanceTo(spring->Point2.Position));
-				// F_ij = -k * (l - L) * (x_i - x_j) / l
-				spring->Point1.Force = -1.0f * spring->Stiffness * (spring->CurrentLenght - spring->InitLenght) *
-					((spring->Point1.Position - spring->Point2.Position) / spring->CurrentLenght);
+				// Akkumuliere Federkraft
+				spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
 				// Analog für Punkt 2
-				spring->Point2.Force = -1.0f * spring->Point1.Force;
+				spring->Point2.Force += -1.0f * spring->Point1.Force;
 			}
 			// Aktualisiere Geschwindigkeit/Position
 			for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
@@ -175,20 +187,19 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 					// Aktualisiere zuerst Position
 					masspoint->Position += timeStep * masspoint->Velocity;
 					// Dann Geschwindigkeit
-					masspoint->Velocity = masspoint->Velocity + ((masspoint->Force/masspoint->Mass) * timeStep);
+					masspoint->Velocity = masspoint->Velocity + (((-1.0f * masspoint->Force) / masspoint->Mass) * timeStep);
 				}
+				// Kraft zurücksetzen
+				masspoint->Force = Vec3(0.0f);
 			}
-
 			break;
 		}
 		case MIDPOINT:
 		{
-
 			break;
 		}
 		case LEAPFROG:
 		{
-
 			break;
 		}
 		default:

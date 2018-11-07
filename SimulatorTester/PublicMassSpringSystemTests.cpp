@@ -18,9 +18,6 @@ namespace SimulatorTester
 			int p0 = msss->addMassPoint(Vec3(0.0, 0.0f, 0), Vec3(-1.0, 0.0f, 0), false);
 			int p1 = msss->addMassPoint(Vec3(0.0, 2.0f, 0), Vec3(1.0, 0.0f, 0), false);
 			msss->addSpring(p0, p1, 1.0);
-
-			//DrawingUtilitiesClass * DUC = new DrawingUtilitiesClass();
-			//msss->initUI(DUC);
 		}
 
 		TEST_METHOD(TestNumberofMassPoints)

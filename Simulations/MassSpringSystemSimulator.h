@@ -1,12 +1,39 @@
 #ifndef MASSSPRINGSYSTEMSIMULATOR_h
 #define MASSSPRINGSYSTEMSIMULATOR_h
+
 #include "Simulator.h"
+#include <algorithm>
+#include <vector>
 
 // Do Not Change
 #define EULER 0
 #define LEAPFROG 1
 #define MIDPOINT 2
 // Do Not Change
+
+struct Masspoint
+{
+	Vec3 Position;
+	Vec3 Velocity;
+	Vec3 Force;
+	float Mass;
+	float Damping;
+	bool Fixed;
+};
+
+struct Spring
+{
+	Masspoint &Point1;
+	Masspoint &Point2;
+	float Stiffness;
+	float InitLenght;
+	float CurrentLenght;
+	// Standartkonstruktor
+	Spring::Spring(Masspoint &ref1, Masspoint &ref2) :
+		Point1(ref1), Point2(ref2)
+	{
+	}
+};
 
 class MassSpringSystemSimulator:public Simulator{
 public:
@@ -37,21 +64,26 @@ public:
 	void applyExternalForce(Vec3 force);
 	
 	// Do Not Change
-	void setIntegrator(int integrator) {
+	void setIntegrator(int integrator)
+	{
 		m_iIntegrator = integrator;
 	}
 
 private:
 	// Data Attributes
-	float m_fMass;
-	float m_fStiffness;
-	float m_fDamping;
-	int m_iIntegrator;
+	float							m_fMass;
+	float							m_fStiffness;
+	float							m_fDamping;
+	int								m_iIntegrator;
+
+	// Simulation Data
+	vector<Masspoint>	m_MassPoints;
+	vector<Spring>		m_Springs;
 
 	// UI Attributes
-	Vec3 m_externalForce;
-	Point2D m_mouse;
-	Point2D m_trackmouse;
-	Point2D m_oldtrackmouse;
+	Vec3							m_externalForce;
+	Point2D						m_oldtrackmouse;
+	Point2D						m_trackmouse;
 };
+
 #endif

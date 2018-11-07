@@ -895,7 +895,3 @@ typedef matrix4x4<Real>  Mat4;
 
 #define MATRICES_H
 #endif
-
-
-
-

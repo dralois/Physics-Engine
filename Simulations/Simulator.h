@@ -19,10 +19,12 @@ using namespace GamePhysics;
 class Simulator{
 public:
 	// Attributes
+	
 	int m_iTestCase;
 	DrawingUtilitiesClass * DUC;
+
 	// Functions
-	
+
 	virtual const char * getTestCasesStr() = 0;
 
 	virtual void reset() = 0;

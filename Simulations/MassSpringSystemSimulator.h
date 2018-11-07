@@ -8,7 +8,6 @@
 #define MIDPOINT 2
 // Do Not Change
 
-
 class MassSpringSystemSimulator:public Simulator{
 public:
 	// Construtors

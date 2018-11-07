@@ -4,7 +4,7 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace SimulatorTester
-{		
+{
 	TEST_CLASS(PublicMassSpringSystemTests)
 	{
 	public: 

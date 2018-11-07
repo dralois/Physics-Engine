@@ -169,5 +169,3 @@ typedef Quaternion<Real> Quat;
 
 
 #endif // __Quaternion_h__
-
-

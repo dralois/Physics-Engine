@@ -252,6 +252,45 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	}
 	case MIDPOINT:
 	{
+		Vec3 Vel_tilt;
+		Vec3 Acc;
+		Vec3 Acc_tilt;
+		float length_tilt;
+
+		//Berechnen aller Positionen nach h/2 Schritt
+		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++) {
+			if (!masspoint->Fixed) {
+				masspoint->Pos_tilt = masspoint->Position + (1.0f * timeStep / 2) * masspoint->Velocity;
+			}
+		}
+
+		// Aktualisiere Längen und Kräfte (incl. h/2)
+		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
+		{
+			length_tilt = sqrt((float)spring->Point1.Pos_tilt.squaredDistanceTo(spring->Point2.Pos_tilt));
+			// Akkumuliere Federkraft
+			spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
+			spring->Point1.Force_tilt += spring->Stiffness* (length_tilt - spring->InitLenght)*
+				(spring->Point1.Pos_tilt - spring->Point2.Pos_tilt) / length_tilt;
+
+			// Analog für Punkt 2
+			spring->Point2.Force += -1.0f * spring->Point1.Force;
+			spring->Point2.Force_tilt += -1.0f * spring->Point1.Force_tilt;
+		}
+
+		// Aktualisiere Geschwindigkeit/Position
+		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
+		{
+			if (!masspoint->Fixed) {
+				Acc = ((-1.0f * masspoint->Force) / masspoint->Mass);
+				Vel_tilt = masspoint->Velocity + (1.0f * timeStep / 2) * Acc;
+				Acc_tilt = ((-1.0f * masspoint->Force_tilt) / masspoint->Mass);
+				masspoint->Position += timeStep * Vel_tilt;
+				masspoint->Velocity += timeStep * Acc_tilt;
+			}
+			masspoint->Force = Vec3(0.0f);
+			masspoint->Force_tilt = Vec3(0.0f);
+		}
 		break;
 	}
 	case LEAPFROG:
@@ -269,8 +308,10 @@ int MassSpringSystemSimulator::addMassPoint(Vec3 position, Vec3 Velocity, bool i
 	// Erstelle neuen Massepunkt
 	Masspoint newMass;
 	newMass.Force = m_externalForce;
+	newMass.Force_tilt = Vec3(0.0f);
 	newMass.Damping = m_fDamping;
 	newMass.Position = position;
+	newMass.Pos_tilt = position;
 	newMass.Velocity = Velocity;
 	newMass.Fixed = isFixed;
 	newMass.Mass = m_fMass;

@@ -14,8 +14,10 @@
 struct Masspoint
 {
 	Vec3 Position;
+	Vec3 Pos_tilt;
 	Vec3 Velocity;
 	Vec3 Force;
+	Vec3 Force_tilt;
 	float Mass;
 	float Damping;
 	bool Fixed;

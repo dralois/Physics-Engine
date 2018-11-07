@@ -5,7 +5,7 @@
 // Get verfügbare Testcases
 const char * MassSpringSystemSimulator::getTestCasesStr()
 {
-	return "Demo 1, Demo 2, Demo 3, Demo 4";
+	return "Demo 2,Demo 3,Demo 4";
 }
 
 // Set Masse des Systems
@@ -22,7 +22,7 @@ void MassSpringSystemSimulator::setMass(float mass)
 void MassSpringSystemSimulator::setStiffness(float stiffness)
 {
 	m_fStiffness = stiffness;
-	for(auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
+	for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 	{
 		spring->Stiffness = m_fStiffness;
 	}
@@ -89,13 +89,26 @@ void MassSpringSystemSimulator::onMouse(int x, int y)
 #pragma region Internal
 
 // Berechnet Federkraft
-Vec3 X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2)
+Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2)
 {
 	// Aktualisiere Länge
-	spring.CurrentLenght = sqrt((float) point1.squaredDistanceTo(point2));
+	spring.CurrentLenght = sqrt((float)point1.squaredDistanceTo(point2));
 	// F_ij = -k * (l - L) * (x_i - x_j) / l
 	return spring.Stiffness * (spring.CurrentLenght - spring.InitLenght) *
-			((point1 - point2) / spring.CurrentLenght);
+		((point1 - point2) / spring.CurrentLenght);
+}
+
+// Demo Szenen Setup für Demo 1-3
+void MassSpringSystemSimulator::X_SetupDefaultDemo()
+{
+	setMass(10.0f);
+	setDampingFactor(0.0f);
+	setStiffness(40.0f);
+	m_fSphereSize = .05f;
+	applyExternalForce(Vec3(0, 0, 0));
+	int p0 = addMassPoint(Vec3(0.0, 0.0f, 0), Vec3(-1.0, 0.0f, 0), false);
+	int p1 = addMassPoint(Vec3(0.0, 2.0f, 0), Vec3(1.0, 0.0f, 0), false);
+	addSpring(p0, p1, 1.0);
 }
 
 #pragma endregion
@@ -107,26 +120,59 @@ void MassSpringSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	this->DUC = DUC;
 	switch (m_iTestCase)
 	{
-	case 0:break;
-	case 1:break;
-	case 2:break;
-	default:break;
+	case 0:
+	case 1:
+	case 2:
+		TwAddVarRW(DUC->g_pTweakBar, "Sphere Size", TW_TYPE_FLOAT, &m_fSphereSize, "min=0.01 step=0.01");
+		break;
+	default:
+		break;
 	}
 }
 
-// TODO
-// Setzte Simulation zurück?
+// Setzte Simulation zurück
 void MassSpringSystemSimulator::reset()
 {
 	m_oldtrackmouse.x = m_oldtrackmouse.y = 0;
 	m_trackmouse.x = m_trackmouse.y = 0;
+	m_fDamping = m_fMass = m_fSphereSize = m_fStiffness = 0;
+	m_externalForce = Vec3(0.0f);
+	m_MassPoints.clear();
+	m_Springs.clear();
 }
 
-// TODO
 // Rendere Simulation
 void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 {
-
+	switch (m_iTestCase)
+	{
+	case 0:
+	case 1:
+	case 2:
+		DUC->setUpLighting(Vec3(), 0.4*Vec3(1, 1, 1), 100, 0.6*Vec3(0.97, 0.86, 1));
+		// Zeichne Lines für Federn
+		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
+		{
+			DUC->beginLine();
+			// Bestimme Differenz (Max. 1.0)
+			float diff = min(abs((spring->CurrentLenght - spring->InitLenght) / spring->InitLenght), 1.0f);
+			// Linie wird roter je nach dem wie hoch die Abweichung von der InitLength ist
+			DUC->drawLine(
+				spring->Point1.Position.toDirectXVector(),
+				Vec3(diff, 1 - diff, 0),
+				spring->Point2.Position.toDirectXVector(),
+				Vec3(diff, 1 - diff, 0));
+			DUC->endLine();
+		}
+		// Zeichne Kugeln für Massepunkte
+		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
+		{
+			DUC->drawSphere(masspoint->Position.toDirectXVector(), Vec3(m_fSphereSize));
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 // TODO
@@ -134,22 +180,32 @@ void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCon
 void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 {
 	m_iTestCase = testCase;
+	// Setzte Simulation zurück
+	reset();
+	// Je nach Case
 	switch (m_iTestCase)
 	{
 	case 0:
-		cout << "Demo 1 !\n";
+	{
+		cout << "Demo 2!" << endl;
+		setIntegrator(EULER);
+		X_SetupDefaultDemo();
 		break;
+	}
 	case 1:
-		cout << "Demo 2 !\n";
+	{
+		cout << "Demo 3!" << endl;
+		setIntegrator(MIDPOINT);
+		X_SetupDefaultDemo();
 		break;
+	}
 	case 2:
-		cout << "Demo 3 !\n";
+	{
+		cout << "Demo 4!" << endl;
 		break;
-	case 3:
-		cout << "Demo 4 !\n";
-		break;
+	}
 	default:
-		cout << "Empty Test!\n";
+		cout << "Empty Demo!" << endl;
 		break;
 	}
 }
@@ -168,43 +224,43 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	// Je nach Integrationsverfahren
 	switch (m_iIntegrator)
 	{
-		case EULER:
+	case EULER:
+	{
+		// Aktualisiere Längen und Kräfte
+		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
-			// Aktualisiere Längen und Kräfte
-			for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
+			// Akkumuliere Federkraft
+			spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
+			// Analog für Punkt 2
+			spring->Point2.Force += -1.0f * spring->Point1.Force;
+		}
+		// Aktualisiere Geschwindigkeit/Position
+		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
+		{
+			// Nur für bewegliche Punkte
+			if (!masspoint->Fixed)
 			{
-				// Akkumuliere Federkraft
-				spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
-				// Analog für Punkt 2
-				spring->Point2.Force += -1.0f * spring->Point1.Force;
+				// Aktualisiere zuerst Position
+				masspoint->Position += timeStep * masspoint->Velocity;
+				// Dann Geschwindigkeit
+				masspoint->Velocity = masspoint->Velocity + (((-1.0f * masspoint->Force) / masspoint->Mass) * timeStep);
 			}
-			// Aktualisiere Geschwindigkeit/Position
-			for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
-			{
-				// Nur für bewegliche Punkte
-				if (!masspoint->Fixed)
-				{
-					// Aktualisiere zuerst Position
-					masspoint->Position += timeStep * masspoint->Velocity;
-					// Dann Geschwindigkeit
-					masspoint->Velocity = masspoint->Velocity + (((-1.0f * masspoint->Force) / masspoint->Mass) * timeStep);
-				}
-				// Kraft zurücksetzen
-				masspoint->Force = Vec3(0.0f);
-			}
-			break;
+			// Kraft zurücksetzen
+			masspoint->Force = Vec3(0.0f);
 		}
-		case MIDPOINT:
-		{
-			break;
-		}
-		case LEAPFROG:
-		{
-			break;
-		}
-		default:
-			break;
-		}
+		break;
+	}
+	case MIDPOINT:
+	{
+		break;
+	}
+	case LEAPFROG:
+	{
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 // Fügt Massepunkt hinzu, gibt dessen Position im Array zurück
@@ -247,6 +303,7 @@ void MassSpringSystemSimulator::applyExternalForce(Vec3 force)
 
 MassSpringSystemSimulator::MassSpringSystemSimulator() :
 	m_externalForce(Vec3(0.0f)),
+	m_fSphereSize(0.0f),
 	m_fStiffness(0.0f),
 	m_oldtrackmouse{},
 	m_fDamping(0.0f),

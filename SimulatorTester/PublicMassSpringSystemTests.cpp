@@ -50,8 +50,18 @@ namespace SimulatorTester
 			MassSpringSystemSimulator * msss = NULL;
 			testSceneSetup(msss);
 			msss->setIntegrator(EULER);
-			for(int i =0; i <10; i++)
+			for (int i = 0; i < 10; i++)
+			{
+				if (i == 1)
+				{
+					ostringstream out;
+					out << endl << "Euler:" << endl;
+					out << "P1: Pos = " << msss->getPositionOfMassPoint(0) << ", Vel = " << msss->getVelocityOfMassPoint(0) << endl;
+					out << "P2: Pos = " << msss->getPositionOfMassPoint(1) << ", Vel = " << msss->getVelocityOfMassPoint(1) << endl;
+					Logger::WriteMessage(out.str().c_str());
+				}
 				msss->simulateTimestep(0.005);;
+			}
 			Assert::AreEqual(-0.04994f,(float)msss->getPositionOfMassPoint(0).x,0.0001f,L"Mass Point at index 0, X value is wrong !!",LINE_INFO());
 			Assert::AreEqual(0.00449f,(float)msss->getPositionOfMassPoint(0).y,0.0001f,L"Mass Point at index 0, Y value is wrong !!",LINE_INFO());
 			Assert::AreEqual(0.0f,(float)msss->getPositionOfMassPoint(0).z,0.0001f,L"Mass Point at index 0, Z value is wrong !!",LINE_INFO());
@@ -65,8 +75,18 @@ namespace SimulatorTester
 			MassSpringSystemSimulator * msss = NULL;
 			testSceneSetup(msss);
 			msss->setIntegrator(MIDPOINT);
-			for(int i =0; i <10; i++)
+			for (int i = 0; i < 10; i++)
+			{
+				if (i == 1)
+				{
+					ostringstream out;
+					out << endl << "Midpoint:" << endl;
+					out << "P1: Pos = " << msss->getPositionOfMassPoint(0) << ", Vel = " << msss->getVelocityOfMassPoint(0) << endl;
+					out << "P2: Pos = " << msss->getPositionOfMassPoint(1) << ", Vel = " << msss->getVelocityOfMassPoint(1) << endl;
+					Logger::WriteMessage(out.str().c_str());
+				}
 				msss->simulateTimestep(0.005);
+			}
 			Assert::AreEqual(-0.0499164f,(float)msss->getPositionOfMassPoint(0).x,0.0001f,L"Mass Point at index 0, X value is wrong !!",LINE_INFO());
 			Assert::AreEqual(0.0049928f,(float)msss->getPositionOfMassPoint(0).y,0.0001f,L"Mass Point at index 0, Y value is wrong !!",LINE_INFO());
 			Assert::AreEqual(0.0f,(float)msss->getPositionOfMassPoint(0).z,0.0001f,L"Mass Point at index 0, Z value is wrong !!",LINE_INFO());

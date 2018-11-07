@@ -81,9 +81,14 @@ private:
 	vector<Spring>		m_Springs;
 
 	// UI Attributes
+	float							m_fSphereSize;
 	Vec3							m_externalForce;
 	Point2D						m_oldtrackmouse;
 	Point2D						m_trackmouse;
+
+	// Functions
+	Vec3 X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2);
+	void X_SetupDefaultDemo();
 };
 
 #endif

@@ -62,18 +62,18 @@ Vec3 MassSpringSystemSimulator::getVelocityOfMassPoint(int index)
 
 #pragma region Events
 
-// Speichere Klickposition
+// Mausbewegung während Klicken
 void MassSpringSystemSimulator::onClick(int x, int y)
 {
 	m_v2Trackmouse.x = x;
 	m_v2Trackmouse.y = y;
 }
 
-// Speichere Mausbewegung
+// Mausbewegung normal
 void MassSpringSystemSimulator::onMouse(int x, int y)
 {
-	m_v2Oldtrackmouse.x = m_v2Trackmouse.x;
-	m_v2Oldtrackmouse.y = m_v2Trackmouse.y;
+	m_v2Oldtrackmouse.x = x;
+	m_v2Oldtrackmouse.y = y;
 	m_v2Trackmouse.x = x;
 	m_v2Trackmouse.y = y;
 }
@@ -110,22 +110,24 @@ Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &po
 // Demo Szenen Setup für Demo 2,3
 void MassSpringSystemSimulator::X_SetupDefaultDemo()
 {
-	setMass(10.0f);
+	setMass(.01f);
 	setDampingFactor(0.0f);
-	setStiffness(40.0f);
+	setStiffness(25.0f);
 	m_fSphereSize = .05f;
 	applyExternalForce(Vec3(0, 0, 0));
-	int p0 = addMassPoint(Vec3(0.0, 0.0f, 0.0f), Vec3(-1.0, 0.0f, 0.0f), false);
-	int p1 = addMassPoint(Vec3(0.0, 2.0f, 0.0f), Vec3(1.0, 0.0f, 0.0f), false);
+	int p0 = addMassPoint(Vec3(0.0, 2.0f, 0.0f), Vec3(0.5, 0.0f, 0.0f), false);
+	int p1 = addMassPoint(Vec3(0.0, 3.0f, 0.0f), Vec3(0.0, 0.0f, 0.5f), false);
+	int p2 = addMassPoint(Vec3(0.0, 4.0f, 0.0f), Vec3(0.0, 0.0f, 0.0f), true);
 	addSpring(p0, p1, 1.0);
+	addSpring(p1, p2, 1.0);
 }
 
 // Demo Szene für Demo 4
 void MassSpringSystemSimulator::X_SetupComplexDemo()
 {
-	setMass(10.0f);
+	setMass(.01f);
 	setDampingFactor(0.0f);
-	setStiffness(10.0f);
+	setStiffness(40.0f);
 	m_fSphereSize = .05f;
 	applyExternalForce(Vec3(0, 0, 0));
 	// Massepunkte
@@ -234,14 +236,14 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 	{
 		cout << "Demo 2!" << endl;
 		setIntegrator(EULER);
-		X_SetupComplexDemo();
+		X_SetupDefaultDemo();
 		break;
 	}
 	case 1:
 	{
 		cout << "Demo 3!" << endl;
 		setIntegrator(MIDPOINT);
-		X_SetupComplexDemo();
+		X_SetupDefaultDemo();
 		break;
 	}
 	case 2:
@@ -259,13 +261,28 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 // Externe Kräfte und Dämpfung berechnen
 void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-	// Wende Gravitation, Dämpfung und Interaktion an
+	Point2D mouseDiff;
+	Vec3 mouseForce(0.0f);
+	// Berechne Differenz
+	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
+	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
+	// Falls linke Maustaste gedrückt..
+	if (mouseDiff.x != 0 || mouseDiff.y != 0)
+	{
+		// Berechne benötigte Matrix
+		Mat4 worldViewInv = Mat4(DUC->g_camera.GetWorldMatrix() * DUC->g_camera.GetViewMatrix()).inverse();
+		// Vektor bestehend aus Mausverschiebung
+		Vec3 inputView = Vec3((float)-mouseDiff.x, (float)mouseDiff.y, 0);
+		// Bestimme Kraft im Worldspace mit Faktor
+		mouseForce = worldViewInv.transformVectorNormal(inputView) * 0.001f;
+	}
+	// Wende Gravitation, Dämpfung und Mausinteraktion an
 	for(auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 	{
 		masspoint->Force = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) -
-			(m_fDamping * masspoint->Velocity) + m_v3ExternalForce;
+			(m_fDamping * masspoint->Velocity) + m_v3ExternalForce + mouseForce;
 		masspoint->ForceTilde = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) -
-			(m_fDamping * masspoint->Velocity) + m_v3ExternalForce;
+			(m_fDamping * masspoint->Velocity) + m_v3ExternalForce + mouseForce;
 	}
 }
 
@@ -376,11 +393,10 @@ void MassSpringSystemSimulator::addSpring(int masspoint1, int masspoint2, float 
 	m_Springs.push_back(newSpring);
 }
 
-// TODO
-// Füge Kraft hinzu (bswp. durch Mausinteraktion)
+// Füge Kraft hinzu
 void MassSpringSystemSimulator::applyExternalForce(Vec3 force)
 {
-
+	m_v3ExternalForce = force;
 }
 
 #pragma endregion

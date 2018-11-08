@@ -14,12 +14,11 @@
 struct Masspoint
 {
 	Vec3 Position;
-	Vec3 Pos_tilt;
+	Vec3 PositionTilde;
 	Vec3 Velocity;
 	Vec3 Force;
-	Vec3 Force_tilt;
+	Vec3 ForceTilde;
 	float Mass;
-	float Damping;
 	bool Fixed;
 };
 
@@ -76,6 +75,7 @@ private:
 	float							m_fMass;
 	float							m_fStiffness;
 	float							m_fDamping;
+	float							m_fGravity;
 	int								m_iIntegrator;
 
 	// Simulation Data
@@ -84,13 +84,15 @@ private:
 
 	// UI Attributes
 	float							m_fSphereSize;
-	Vec3							m_externalForce;
-	Point2D						m_oldtrackmouse;
-	Point2D						m_trackmouse;
+	Vec3							m_v3ExternalForce;
+	Point2D						m_v2Oldtrackmouse;
+	Point2D						m_v2Trackmouse;
 
 	// Functions
 	Vec3 X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2);
 	void X_SetupDefaultDemo();
+	void X_SetupComplexDemo();
+	void X_ApplyBounding();
 };
 
 #endif

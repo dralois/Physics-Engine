@@ -29,7 +29,7 @@ struct Spring
 	Masspoint &Point2;
 	float Stiffness;
 	float InitLenght;
-	float CurrentLenght;
+	float CurrentLength;
 	// Standartkonstruktor
 	Spring::Spring(Masspoint &ref1, Masspoint &ref2) :
 		Point1(ref1), Point2(ref2)

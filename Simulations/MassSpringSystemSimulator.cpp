@@ -1,8 +1,8 @@
-#include "MassSpringSystemSimulator.h"
+ï»¿#include "MassSpringSystemSimulator.h"
 
 #pragma region Properties
 
-// Get verfügbare Testcases
+// Get verfÃ¼bare Testcases
 const char * MassSpringSystemSimulator::getTestCasesStr()
 {
 	return "Demo 2,Demo 3,Demo 4";
@@ -28,7 +28,7 @@ void MassSpringSystemSimulator::setStiffness(float stiffness)
 	}
 }
 
-// Set Dämpfung
+// Set DÃ¤mpfung
 void MassSpringSystemSimulator::setDampingFactor(float damping)
 {
 	m_fDamping = damping;
@@ -76,6 +76,13 @@ void MassSpringSystemSimulator::onClick(int x, int y)
 // Speichere Mausbewegung
 void MassSpringSystemSimulator::onMouse(int x, int y)
 {
+	/* !!!!!!
+	 logischerweise soll es so sein:
+		m_oldtrackmouse.x = m_trackmouse.x;
+		m_oldtrackmouse.y = m_trackmouse.y;
+		m_trackmouse.x = x;
+		m_trackmouse.y = y;
+	*/
 	m_oldtrackmouse.x = x;
 	m_oldtrackmouse.y = y;
 	m_trackmouse.x = x;
@@ -91,14 +98,21 @@ void MassSpringSystemSimulator::onMouse(int x, int y)
 // Berechnet Federkraft
 Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2)
 {
-	// Aktualisiere Länge
-	spring.CurrentLenght = sqrt((float)point1.squaredDistanceTo(point2));
+	// Aktualisiere LÃ¤nge
+	spring.CurrentLength = sqrt((float)point1.squaredDistanceTo(point2));
 	// F_ij = -k * (l - L) * (x_i - x_j) / l
-	return spring.Stiffness * (spring.CurrentLenght - spring.InitLenght) *
-		((point1 - point2) / spring.CurrentLenght);
+
+
+	/* !!!!!!
+		Problem mit dieser Methode wenn zwei Punkte Ã¼berlappe sich:
+		1. point1 - point2 ist ein null Vektor
+		2. CurrentLength = 0 als Nenner
+	*/
+	return spring.Stiffness * (spring.CurrentLength - spring.InitLenght) *
+		((point1 - point2) / spring.CurrentLength);
 }
 
-// Demo Szenen Setup für Demo 1-3
+// Demo Szenen Setup fÃ¼r Demo 1-3
 void MassSpringSystemSimulator::X_SetupDefaultDemo()
 {
 	setMass(10.0f);
@@ -130,7 +144,7 @@ void MassSpringSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	}
 }
 
-// Setzte Simulation zurück
+// Setzte Simulation zurÃ¼ck
 void MassSpringSystemSimulator::reset()
 {
 	m_oldtrackmouse.x = m_oldtrackmouse.y = 0;
@@ -150,12 +164,12 @@ void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCon
 	case 1:
 	case 2:
 		DUC->setUpLighting(Vec3(), 0.4*Vec3(1, 1, 1), 100, 0.6*Vec3(0.97, 0.86, 1));
-		// Zeichne Lines für Federn
+		// Zeichne Lines fÃ¼r Federn
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
 			DUC->beginLine();
 			// Bestimme Differenz (Max. 1.0)
-			float diff = min(abs((spring->CurrentLenght - spring->InitLenght) / spring->InitLenght), 1.0f);
+			float diff = min(abs((spring->CurrentLength - spring->InitLenght) / spring->InitLenght), 1.0f);
 			// Linie wird roter je nach dem wie hoch die Abweichung von der InitLength ist
 			DUC->drawLine(
 				spring->Point1.Position.toDirectXVector(),
@@ -164,7 +178,7 @@ void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCon
 				Vec3(diff, 1 - diff, 0));
 			DUC->endLine();
 		}
-		// Zeichne Kugeln für Massepunkte
+		// Zeichne Kugeln fÃ¼r Massepunkte
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
 			DUC->drawSphere(masspoint->Position.toDirectXVector(), Vec3(m_fSphereSize));
@@ -180,7 +194,7 @@ void MassSpringSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCon
 void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 {
 	m_iTestCase = testCase;
-	// Setzte Simulation zurück
+	// Setzte Simulation zurÃ¼ck
 	reset();
 	// Je nach Case
 	switch (m_iTestCase)
@@ -224,20 +238,36 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	// Je nach Integrationsverfahren
 	switch (m_iIntegrator)
 	{
+
+	/*
+		Richtlinien hier:
+		for all points:
+			1. clear force
+			2. add external force
+		for all springs:
+			1. computer force
+			2. add force to points
+		for all points:
+			1. integrate position
+			2. integrate velocity
+
+		!!!!! nur mÃ¶glich, wenn: 
+		m_Masspoints und m _Springs speichern Zeiger auf dieselben Puntke!!!
+	*/
 	case EULER:
 	{
-		// Aktualisiere Längen und Kräfte
+		// Aktualisiere LÃ¤ngen und KrÃ¤fte
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
 			// Akkumuliere Federkraft
 			spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
-			// Analog für Punkt 2
+			// Analog fÃ¼r Punkt 2
 			spring->Point2.Force += -1.0f * spring->Point1.Force;
 		}
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
-			// Nur für bewegliche Punkte
+			// Nur fÃ¼r bewegliche Punkte
 			if (!masspoint->Fixed)
 			{
 				// Aktualisiere zuerst Position
@@ -245,7 +275,7 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 				// Dann Geschwindigkeit
 				masspoint->Velocity = masspoint->Velocity + (((-1.0f * masspoint->Force) / masspoint->Mass) * timeStep);
 			}
-			// Kraft zurücksetzen
+			// Kraft zurÃ¼ksetzen
 			masspoint->Force = Vec3(0.0f);
 		}
 		break;
@@ -264,7 +294,7 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 			}
 		}
 
-		// Aktualisiere Längen und Kräfte (incl. h/2)
+		// Aktualisiere LÃ¤ngen und KrÃ¤fte (incl. h/2)
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
 			length_tilt = sqrt((float)spring->Point1.Pos_tilt.squaredDistanceTo(spring->Point2.Pos_tilt));
@@ -273,7 +303,7 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 			spring->Point1.Force_tilt += spring->Stiffness* (length_tilt - spring->InitLenght)*
 				(spring->Point1.Pos_tilt - spring->Point2.Pos_tilt) / length_tilt;
 
-			// Analog für Punkt 2
+			// Analog fÃ¼r Punkt 2
 			spring->Point2.Force += -1.0f * spring->Point1.Force;
 			spring->Point2.Force_tilt += -1.0f * spring->Point1.Force_tilt;
 		}
@@ -302,7 +332,7 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	}
 }
 
-// Fügt Massepunkt hinzu, gibt dessen Position im Array zurück
+// FÃ¼gt Massepunkt hinzu, gibt dessen Position im Array zurÃ¼ck
 int MassSpringSystemSimulator::addMassPoint(Vec3 position, Vec3 Velocity, bool isFixed)
 {
 	// Erstelle neuen Massepunkt
@@ -315,24 +345,24 @@ int MassSpringSystemSimulator::addMassPoint(Vec3 position, Vec3 Velocity, bool i
 	newMass.Velocity = Velocity;
 	newMass.Fixed = isFixed;
 	newMass.Mass = m_fMass;
-	// Speichere im Array und gebe Position zurück
+	// Speichere im Array und gebe Position zurÃ¼ck
 	m_MassPoints.push_back(newMass);
 	return m_MassPoints.size() - 1;
 }
 
-// Fügt neue Feder zw. Massepunkten hinzu
+// FÃ¼gt neue Feder zw. Massepunkten hinzu
 void MassSpringSystemSimulator::addSpring(int masspoint1, int masspoint2, float initialLength)
 {
 	// Erstelle Feder
 	Spring newSpring(m_MassPoints[masspoint1], m_MassPoints[masspoint2]);
-	newSpring.InitLenght = newSpring.CurrentLenght = initialLength;
+	newSpring.InitLenght = newSpring.CurrentLength = initialLength;
 	newSpring.Stiffness = m_fStiffness;
 	// Speichere im Array
 	m_Springs.push_back(newSpring);
 }
 
 // TODO
-// Füge Kraft hinzu (bswp. durch Mausinteraktion)
+// FÃ¼ge Kraft hinzu (bswp. durch Mausinteraktion)
 void MassSpringSystemSimulator::applyExternalForce(Vec3 force)
 {
 

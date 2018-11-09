@@ -92,6 +92,9 @@ void MassSpringSystemSimulator::X_ApplyBounding()
 		// Boden darf nicht unterschritten werden
 		if (masspoint->Position.y < 0.0f)
 			masspoint->Position.y = 0.0f;
+		
+		// TODO
+		// Wo sind die Wände? 
 	}
 }
 
@@ -103,7 +106,7 @@ Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &po
 	// Breche ab falls P1 ca. P2
 	if (spring.CurrentLength <= FLT_EPSILON) return Vec3(0.0f);
 	// F_ij = -k * (l - L) * (x_i - x_j) / l
-	return spring.Stiffness * (spring.CurrentLength - spring.InitLenght) *
+	return -1.0f * spring.Stiffness * (spring.CurrentLength - spring.InitLenght) *
 		((point1 - point2) / spring.CurrentLength);
 }
 
@@ -282,11 +285,13 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 		mouseForce = worldViewInv.transformVectorNormal(inputView) * 0.001f;
 	}
 	// Wende Gravitation und Mausinteraktion an
+	/*
 	for(auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 	{
 		masspoint->Force = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) + m_v3ExternalForce + mouseForce;
 		masspoint->ForceTilde = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) + m_v3ExternalForce + mouseForce;
 	}
+	*/
 }
 
 // OPT.: Leapfrog
@@ -298,6 +303,14 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	{
 	case EULER:
 	{
+		// Kraft zurücksetzen, Gravity einsetzen, Damping einsetzen
+		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
+		{
+			masspoint->Force = Vec3(0, 0, 0);
+			masspoint->Force += Vec3(0, -1.0f * m_fGravity * masspoint->Mass, 0);
+			masspoint->Force -= masspoint->Velocity * m_fDamping;
+		}
+
 		// Aktualisiere Längen und Kräfte
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
@@ -305,8 +318,9 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 			// Akkumuliere Federkraft
 			spring->Point1.Force += addForce;
 			// Analog für Punkt 2
-			spring->Point2.Force += -1.0f * addForce;
+			spring->Point2.Force -= addForce;
 		}
+
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
@@ -316,46 +330,58 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 				// Aktualisiere zuerst Position
 				masspoint->Position += timeStep * masspoint->Velocity;
 				// Dann Geschwindigkeit
-				masspoint->Velocity = masspoint->Velocity + (((-1.0f * masspoint->Force) / masspoint->Mass) * timeStep);
+				masspoint->Velocity += (masspoint->Force / masspoint->Mass) * timeStep;
 			}
-			// Kraft zurüksetzen
-			masspoint->Force = Vec3(0.0f);
 		}
 		break;
 	}
 	case MIDPOINT:
 	{
-		//Berechnen aller Positionen nach h/2 Schritt
-		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++) {
+		
+		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
+		{
+			// Kraft zurücksetzen, Gravity einsetzen, Damping einsetzen
+			masspoint->Force =  Vec3(0, 0, 0);
+			masspoint->Force += Vec3(0, -1.0f * m_fGravity * masspoint->Mass, 0);
+			masspoint->Force -= m_fDamping * masspoint->Velocity;
+			
+			masspoint->ForceTilde =  Vec3(0, 0, 0);
+			masspoint->ForceTilde += Vec3(0, -1.0f * m_fGravity * masspoint->Mass, 0);
+			// Damping für Midpoint muss man später berechnen, da man braucht Midpoint Velocity
+
+			//Berechnen aller Positionen nach h/2 Schritt
 			if (!masspoint->Fixed)
 			{
-				masspoint->PositionTilde = masspoint->Position + (1.0f * timeStep / 2) * masspoint->Velocity;
+				masspoint->PositionTilde = masspoint->Position + masspoint->Velocity * timeStep / 2;
 			}
 		}
+
 		// Aktualisiere Längen und Kräfte (incl. h/2)
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
 			Vec3 addForce = X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
 			Vec3 addForceTilde = X_CalcSpringForce(*spring, spring->Point1.PositionTilde, spring->Point2.PositionTilde);
+			
 			// Akkumuliere Federkraft
 			spring->Point1.Force += addForce;
 			spring->Point1.ForceTilde += addForceTilde;
+			
 			// Analog für Punkt 2
-			spring->Point2.Force += -1.0f * addForce;
-			spring->Point2.ForceTilde += -1.0f * addForceTilde;
+			spring->Point2.Force -= addForce;
+			spring->Point2.ForceTilde -= addForceTilde;
 		}
+
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
 			if (!masspoint->Fixed)
 			{
-				masspoint->Position += timeStep * (masspoint->Velocity + (1.0f * timeStep / 2) *
-					(((-1.0f * masspoint->Force) / masspoint->Mass)));
-				masspoint->Velocity += timeStep * (((-1.0f * masspoint->ForceTilde) / masspoint->Mass));
+				Vec3 midPointVelocity = masspoint->Velocity + (masspoint->Force / masspoint->Mass) * timeStep / 2;
+				masspoint->Position += timeStep * midPointVelocity;
+
+				masspoint->ForceTilde -= m_fDamping * midPointVelocity;
+				masspoint->Velocity += timeStep * (masspoint->ForceTilde / masspoint->Mass);
 			}
-			// Kraft zurücksetzten
-			masspoint->ForceTilde = Vec3(0.0f);
-			masspoint->Force = Vec3(0.0f);
 		}
 		break;
 	}

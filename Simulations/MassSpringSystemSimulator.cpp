@@ -111,48 +111,52 @@ Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &po
 void MassSpringSystemSimulator::X_SetupDefaultDemo()
 {
 	setMass(.01f);
-	setDampingFactor(0.0f);
+	setDampingFactor(0.1f);
 	setStiffness(25.0f);
-	m_fSphereSize = .05f;
+	m_fSphereSize = .01f;
 	applyExternalForce(Vec3(0, 0, 0));
-	int p0 = addMassPoint(Vec3(0.0, 2.0f, 0.0f), Vec3(0.5, 0.0f, 0.0f), false);
-	int p1 = addMassPoint(Vec3(0.0, 3.0f, 0.0f), Vec3(0.0, 0.0f, 0.5f), false);
-	int p2 = addMassPoint(Vec3(0.0, 4.0f, 0.0f), Vec3(0.0, 0.0f, 0.0f), true);
-	addSpring(p0, p1, 1.0);
-	addSpring(p1, p2, 1.0);
+	int p0 = addMassPoint(Vec3(0.0, .2f, 0.0f), Vec3(0.5f, 0.0f, 0.0f), false);
+	int p1 = addMassPoint(Vec3(0.0, .3f, 0.0f), Vec3(0.0f, 0.0f, 0.5f), false);
+	int p2 = addMassPoint(Vec3(0.0, .4f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), true);
+	addSpring(p0, p1, .1f);
+	addSpring(p1, p2, .1f);
 }
 
 // Demo Szene für Demo 4
 void MassSpringSystemSimulator::X_SetupComplexDemo()
 {
 	setMass(.01f);
-	setDampingFactor(0.0f);
-	setStiffness(40.0f);
-	m_fSphereSize = .05f;
+	setDampingFactor(0.1f);
+	setStiffness(25.0f);
+	m_fSphereSize = .01f;
 	applyExternalForce(Vec3(0, 0, 0));
-	// Massepunkte
-	int p0 = addMassPoint(Vec3(0.0f, 3.0f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), true);
-	int p1 = addMassPoint(Vec3(1.0f, 3.0f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p2 = addMassPoint(Vec3(2.0f, 3.0f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p3 = addMassPoint(Vec3(0.0f, 3.0f, 1.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p4 = addMassPoint(Vec3(1.0f, 3.0f, 1.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p5 = addMassPoint(Vec3(2.0f, 3.0f, 1.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p6 = addMassPoint(Vec3(0.0f, 3.0f, 2.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p7 = addMassPoint(Vec3(1.0f, 3.0f, 2.0f), Vec3(0.0f, 0.0f, 0.0f), false);
-	int p8 = addMassPoint(Vec3(2.0f, 3.0f, 2.0f), Vec3(0.0f, 0.0f, 0.0f), true);
-	// Federn
-	addSpring(p0, p1, 1.0f);
-	addSpring(p0, p3, 1.0f);
-	addSpring(p1, p2, 1.0f);
-	addSpring(p1, p4, 1.0f);
-	addSpring(p2, p5, 1.0f);
-	addSpring(p3, p6, 1.0f);
-	addSpring(p3, p4, 1.0f);
-	addSpring(p4, p7, 1.0f);
-	addSpring(p4, p5, 1.0f);
-	addSpring(p5, p8, 1.0f);
-	addSpring(p6, p7, 1.0f);
-	addSpring(p7, p8, 1.0f);
+	// Matrix Größe
+	int size = 10;
+	// Seeden
+	srand(time(NULL));
+	// Massepunkte erstellen (Zufällig Punkte fixieren)
+	for(int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < size; j++)
+		{
+			addMassPoint(Vec3(i*.1f - .05f * size, .5f, j*.1f - .05f * size), Vec3(0.0f), rand() % 10 > 8);
+		}
+	}
+	// Federn aufspannen
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < size; j++)
+		{
+			if (i < size - 1)
+			{
+				addSpring(i + (j*size), i + (j*size) + 1, .1f);
+			}
+			if (j < size - 1)
+			{
+				addSpring(i + (j * size), i + (j + 1) * size, .1f);
+			}
+		}
+	}
 }
 
 #pragma endregion
@@ -243,7 +247,7 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 	{
 		cout << "Demo 3!" << endl;
 		setIntegrator(MIDPOINT);
-		X_SetupDefaultDemo();
+		X_SetupComplexDemo();
 		break;
 	}
 	case 2:
@@ -259,6 +263,7 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 }
 
 // Externe Kräfte und Dämpfung berechnen
+// TODO: Dämpfung
 void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
 	Point2D mouseDiff;
@@ -266,7 +271,7 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 	// Berechne Differenz
 	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
 	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
-	// Falls linke Maustaste gedrückt..
+	// Falls linke Maustaste gedrückt
 	if (mouseDiff.x != 0 || mouseDiff.y != 0)
 	{
 		// Berechne benötigte Matrix
@@ -276,13 +281,11 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 		// Bestimme Kraft im Worldspace mit Faktor
 		mouseForce = worldViewInv.transformVectorNormal(inputView) * 0.001f;
 	}
-	// Wende Gravitation, Dämpfung und Mausinteraktion an
+	// Wende Gravitation und Mausinteraktion an
 	for(auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 	{
-		masspoint->Force = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) -
-			(m_fDamping * masspoint->Velocity) + m_v3ExternalForce + mouseForce;
-		masspoint->ForceTilde = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) -
-			(m_fDamping * masspoint->Velocity) + m_v3ExternalForce + mouseForce;
+		masspoint->Force = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) + m_v3ExternalForce + mouseForce;
+		masspoint->ForceTilde = Vec3(0.0f, masspoint->Mass * m_fGravity, 0.0f) + m_v3ExternalForce + mouseForce;
 	}
 }
 
@@ -298,10 +301,11 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 		// Aktualisiere Längen und Kräfte
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
+			Vec3 addForce = X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
 			// Akkumuliere Federkraft
-			spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
+			spring->Point1.Force += addForce;
 			// Analog für Punkt 2
-			spring->Point2.Force += -1.0f * spring->Point1.Force;
+			spring->Point2.Force += -1.0f * addForce;
 		}
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
@@ -323,33 +327,35 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	{
 		//Berechnen aller Positionen nach h/2 Schritt
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++) {
-			if (!masspoint->Fixed) {
+			if (!masspoint->Fixed)
+			{
 				masspoint->PositionTilde = masspoint->Position + (1.0f * timeStep / 2) * masspoint->Velocity;
 			}
 		}
 		// Aktualisiere Längen und Kräfte (incl. h/2)
 		for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 		{
-			float l_fLengthTilt = sqrt((float)spring->Point1.PositionTilde.squaredDistanceTo(spring->Point2.PositionTilde));
+			Vec3 addForce = X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
+			Vec3 addForceTilde = X_CalcSpringForce(*spring, spring->Point1.PositionTilde, spring->Point2.PositionTilde);
 			// Akkumuliere Federkraft
-			spring->Point1.Force += X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
-			spring->Point1.ForceTilde += spring->Stiffness* (l_fLengthTilt - spring->InitLenght)*
-				(spring->Point1.PositionTilde - spring->Point2.PositionTilde) / l_fLengthTilt;
+			spring->Point1.Force += addForce;
+			spring->Point1.ForceTilde += addForceTilde;
 			// Analog für Punkt 2
-			spring->Point2.Force += -1.0f * spring->Point1.Force;
-			spring->Point2.ForceTilde += -1.0f * spring->Point1.ForceTilde;
+			spring->Point2.Force += -1.0f * addForce;
+			spring->Point2.ForceTilde += -1.0f * addForceTilde;
 		}
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
-			if (!masspoint->Fixed) {
+			if (!masspoint->Fixed)
+			{
 				masspoint->Position += timeStep * (masspoint->Velocity + (1.0f * timeStep / 2) *
 					(((-1.0f * masspoint->Force) / masspoint->Mass)));
 				masspoint->Velocity += timeStep * (((-1.0f * masspoint->ForceTilde) / masspoint->Mass));
 			}
 			// Kraft zurücksetzten
-			masspoint->Force = Vec3(0.0f);
 			masspoint->ForceTilde = Vec3(0.0f);
+			masspoint->Force = Vec3(0.0f);
 		}
 		break;
 	}

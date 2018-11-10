@@ -88,9 +88,11 @@ private:
 
 	// Functions
 	Vec3 X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2);
+	void X_SetupManualDemo();
 	void X_SetupDefaultDemo();
 	void X_SetupComplexDemo();
 	void X_ApplyBounding();
+	void internalForcesCalculations();
 };
 
 #endif

@@ -92,9 +92,6 @@ void MassSpringSystemSimulator::X_ApplyBounding()
 		// Boden darf nicht unterschritten werden
 		if (masspoint->Position.y < 0.0f)
 			masspoint->Position.y = 0.0f;
-		
-		// TODO
-		// Wo sind die Wände? 
 	}
 }
 
@@ -113,7 +110,7 @@ Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &po
 // Demo Szenen Setup für Demo 2,3
 void MassSpringSystemSimulator::X_SetupDefaultDemo()
 {
-	setRunningManualTest(false);
+	X_SetRunningManualTest(false);
 	setMass(.01f);
 	setDampingFactor(0.1f);
 	setStiffness(25.0f);
@@ -129,14 +126,16 @@ void MassSpringSystemSimulator::X_SetupDefaultDemo()
 // Demo Szene für Demo 4
 void MassSpringSystemSimulator::X_SetupComplexDemo()
 {
-	setRunningManualTest(false);
+	X_SetRunningManualTest(false);
 	setMass(.01f);
 	setDampingFactor(0.1f);
 	setStiffness(25.0f);
 	m_fSphereSize = .01f;
-	applyExternalForce(Vec3(0, 0, 0));
-	// Matrix Größe
-	int size = 10;
+	applyExternalForce(Vec3(0.0f));
+	// Matrix Parameter
+	int size = 8;
+	float gridSize = .1f;
+	float height = .5f;
 	// Seeden
 	srand(time(NULL));
 	// Massepunkte erstellen (Zufällig Punkte fixieren)
@@ -144,7 +143,11 @@ void MassSpringSystemSimulator::X_SetupComplexDemo()
 	{
 		for (int j = 0; j < size; j++)
 		{
-			addMassPoint(Vec3(i*.1f - .05f * size, .5f, j*.1f - .05f * size), Vec3(0.0f), rand() % 10 > 8);
+			addMassPoint(Vec3((i * gridSize) - (.5f * gridSize * size),
+												height,
+												(j * gridSize) - (.5f * gridSize * size)),
+									Vec3(0.0f),
+									rand() % 10 > 8);
 		}
 	}
 	// Federn aufspannen
@@ -154,11 +157,11 @@ void MassSpringSystemSimulator::X_SetupComplexDemo()
 		{
 			if (i < size - 1)
 			{
-				addSpring(i + (j*size), i + (j*size) + 1, .1f);
+				addSpring(i + (j*size), i + (j*size) + 1, gridSize);
 			}
 			if (j < size - 1)
 			{
-				addSpring(i + (j * size), i + (j + 1) * size, .1f);
+				addSpring(i + (j * size), i + (j + 1) * size, gridSize);
 			}
 		}
 	}
@@ -168,7 +171,7 @@ void MassSpringSystemSimulator::X_SetupComplexDemo()
 
 // m_bRunningManualTest ist true, wenn demo 1 läuft
 // m_bRunningManualTest ist false, wenn demo 2, 3, 4 läuft
-void MassSpringSystemSimulator::setRunningManualTest(bool isRunningTestMode)
+void MassSpringSystemSimulator::X_SetRunningManualTest(bool isRunningTestMode)
 {
 	m_bRunningManualTest = isRunningTestMode;
 }
@@ -202,7 +205,7 @@ void MassSpringSystemSimulator::reset()
 	m_fGravity = 9.81f;
 	m_MassPoints.clear();
 	m_Springs.clear();
-	setRunningManualTest(true);
+	X_SetRunningManualTest(true);
 }
 
 // Rendere Simulation
@@ -279,21 +282,18 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 	}
 	default:
 		cout << "Empty Demo!" << endl;
-		setRunningManualTest(true);
+		X_SetRunningManualTest(true);
 		break;
 	}
 }
 
 // Externe Kräfte und Dämpfung berechnen
-// TODO: Dämpfung
 void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-	// Diese Methode wird nur durchgeführt, wenn demo 1 nicht läuft
-	if (m_bRunningManualTest)
-		return;
-
 	Point2D mouseDiff;
 	Vec3 mouseForce(0.0f);
+	// Diese Methode wird nur durchgeführt, wenn demo 1 nicht läuft
+	if (m_bRunningManualTest) return;
 	// Berechne Differenz
 	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
 	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
@@ -311,11 +311,10 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 	for(auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 	{
 		// Gravity einsetzen, Damping einsetzen
-		masspoint->Force += Vec3(0, -1.0f * m_fGravity * masspoint->Mass, 0);			
+		masspoint->Force += Vec3(0, -1.0f * m_fGravity * masspoint->Mass, 0);
 		masspoint->Force += mouseForce;
 		masspoint->Force += m_v3ExternalForce;
 		masspoint->Force -= m_fDamping * masspoint->Velocity;
-
 		if (m_iIntegrator == MIDPOINT) 
 		{
 			// ForceTilde braucht man nur eigentlich für Midpoint Berechnung
@@ -328,15 +327,13 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 }
 
 // Interne Kräfte berechnen, also Federnkraft
-void MassSpringSystemSimulator::internalForcesCalculations()
+void MassSpringSystemSimulator::X_InternalForcesCalculations()
 {
 	for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
 	{
 		Vec3 addForce = X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
-
 		spring->Point1.Force += addForce;
-		spring->Point2.Force -= addForce;
-		
+		spring->Point2.Force -= addForce;	
 		// ForceTilde braucht man nur für Midpoint Berechnung
 		if (m_iIntegrator == MIDPOINT)
 		{
@@ -347,9 +344,6 @@ void MassSpringSystemSimulator::internalForcesCalculations()
 	}
 }
 
-// OPT.: Leapfrog
-
-
 // Simuliere einen Schritt
 void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 {
@@ -358,8 +352,8 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	{
 	case EULER:
 	{
-		internalForcesCalculations();
-
+		// Interne Kräfte berechnen
+		X_InternalForcesCalculations();
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
@@ -371,7 +365,6 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 				// Dann Geschwindigkeit
 				masspoint->Velocity += (masspoint->Force / masspoint->Mass) * timeStep;
 			}
-
 			// Kraft zurücksetzen
 			masspoint->Force = Vec3(0, 0, 0);
 		}
@@ -387,9 +380,8 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 				masspoint->PositionTilde = masspoint->Position + masspoint->Velocity * timeStep / 2.0f;
 			}
 		}
-
-		internalForcesCalculations();
-
+		// Dann berechne interne Kräfte
+		X_InternalForcesCalculations();
 		// Aktualisiere Geschwindigkeit/Position
 		for (auto masspoint = m_MassPoints.begin(); masspoint != m_MassPoints.end(); masspoint++)
 		{
@@ -397,12 +389,9 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 			{
 				Vec3 midPointVelocity = masspoint->Velocity + (masspoint->Force / masspoint->Mass) * timeStep / 2.0f;
 				masspoint->Position += timeStep * midPointVelocity;
-
-				// Nur dann wenn man Midpoint Velocity hat, kann man Damping für Midpoint berechnen
 				masspoint->ForceTilde -= m_fDamping * midPointVelocity;
 				masspoint->Velocity += timeStep * (masspoint->ForceTilde / masspoint->Mass);
 			}
-
 			// Kraft zurücksetzen
 			masspoint->Force = Vec3(0.0f);
 			masspoint->ForceTilde = Vec3(0.0f);
@@ -411,7 +400,6 @@ void MassSpringSystemSimulator::simulateTimestep(float timeStep)
 	}
 	case LEAPFROG:
 	{
-		// OPT.
 		break;
 	}
 	default:

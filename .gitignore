@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+*.enc
 
 # Precompiled Headers
 *.gch
@@ -40,7 +41,11 @@
 *.idb
 *.iobj
 *.ipdb
+*.cache
 .vs/*
-Win32/*
-x64/*
-x86/*
+Simulations/Win32/*
+Simulations/x64/*
+Simulations/x86/*
+SimulationsTester/Win32/*
+SimulationsTester/x64/*
+SimulationsTester/x86/*

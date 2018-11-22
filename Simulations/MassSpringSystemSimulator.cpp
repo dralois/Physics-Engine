@@ -107,15 +107,33 @@ Vec3 MassSpringSystemSimulator::X_CalcSpringForce(Spring &spring, const Vec3 &po
 		((point1 - point2) / spring.CurrentLength);
 }
 
+// Interne Kräfte berechnen, also Federnkraft
+void MassSpringSystemSimulator::X_InternalForcesCalculations()
+{
+	for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
+	{
+		Vec3 addForce = X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
+		spring->Point1.Force += addForce;
+		spring->Point2.Force -= addForce;
+		// ForceTilde braucht man nur für Midpoint Berechnung
+		if (m_iIntegrator == MIDPOINT)
+		{
+			Vec3 addForceTilde = X_CalcSpringForce(*spring, spring->Point1.PositionTilde, spring->Point2.PositionTilde);
+			spring->Point2.ForceTilde -= addForceTilde;
+			spring->Point1.ForceTilde += addForceTilde;
+		}
+	}
+}
+
 // Demo Szenen Setup für Demo 2,3
 void MassSpringSystemSimulator::X_SetupDefaultDemo()
 {
-	X_SetRunningManualTest(false);
 	setMass(.01f);
 	setDampingFactor(0.1f);
 	setStiffness(25.0f);
 	m_fSphereSize = .01f;
 	applyExternalForce(Vec3(0.0f));
+	m_bRunningManualTest = false;
 	int p0 = addMassPoint(Vec3(0.0f, .2f, 0.0f), Vec3(0.5f, 0.0f, 0.0f), false);
 	int p1 = addMassPoint(Vec3(0.0f, .3f, 0.0f), Vec3(0.0f, 0.0f, 0.5f), false);
 	int p2 = addMassPoint(Vec3(0.0f, .4f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), true);
@@ -126,12 +144,12 @@ void MassSpringSystemSimulator::X_SetupDefaultDemo()
 // Demo Szene für Demo 4
 void MassSpringSystemSimulator::X_SetupComplexDemo()
 {
-	X_SetRunningManualTest(false);
 	setMass(.01f);
 	setDampingFactor(0.1f);
 	setStiffness(25.0f);
 	m_fSphereSize = .01f;
 	applyExternalForce(Vec3(0.0f));
+	m_bRunningManualTest = false;
 	// Matrix Parameter
 	int size = 8;
 	float gridSize = .1f;
@@ -169,14 +187,7 @@ void MassSpringSystemSimulator::X_SetupComplexDemo()
 
 #pragma endregion
 
-// m_bRunningManualTest ist true, wenn demo 1 läuft
-// m_bRunningManualTest ist false, wenn demo 2, 3, 4 läuft
-void MassSpringSystemSimulator::X_SetRunningManualTest(bool isRunningTestMode)
-{
-	m_bRunningManualTest = isRunningTestMode;
-}
-
-// Initialisiere HUD je nach Demo
+// Initialisiere UI je nach Demo
 void MassSpringSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 {
 	this->DUC = DUC;
@@ -198,14 +209,14 @@ void MassSpringSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 // Setzte Simulation zurück
 void MassSpringSystemSimulator::reset()
 {
+	m_fDamping = m_fMass = m_fSphereSize = m_fStiffness = 0.0f;
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
-	m_fDamping = m_fMass = m_fSphereSize = m_fStiffness = 0;
 	m_v3ExternalForce = Vec3(0.0f);
+	m_bRunningManualTest = true;
 	m_fGravity = 9.81f;
 	m_MassPoints.clear();
 	m_Springs.clear();
-	X_SetRunningManualTest(true);
 }
 
 // Rendere Simulation
@@ -282,7 +293,7 @@ void MassSpringSystemSimulator::notifyCaseChanged(int testCase)
 	}
 	default:
 		cout << "Empty Demo!" << endl;
-		X_SetRunningManualTest(true);
+		m_bRunningManualTest = true;
 		break;
 	}
 }
@@ -322,24 +333,6 @@ void MassSpringSystemSimulator::externalForcesCalculations(float timeElapsed)
 			masspoint->ForceTilde += mouseForce;
 			masspoint->ForceTilde += m_v3ExternalForce;
 			// Damping für Midpoint muss man später berechnen, da man braucht noch Midpoint Velocity
-		}
-	}
-}
-
-// Interne Kräfte berechnen, also Federnkraft
-void MassSpringSystemSimulator::X_InternalForcesCalculations()
-{
-	for (auto spring = m_Springs.begin(); spring != m_Springs.end(); spring++)
-	{
-		Vec3 addForce = X_CalcSpringForce(*spring, spring->Point1.Position, spring->Point2.Position);
-		spring->Point1.Force += addForce;
-		spring->Point2.Force -= addForce;	
-		// ForceTilde braucht man nur für Midpoint Berechnung
-		if (m_iIntegrator == MIDPOINT)
-		{
-			Vec3 addForceTilde = X_CalcSpringForce(*spring, spring->Point1.PositionTilde, spring->Point2.PositionTilde);
-			spring->Point2.ForceTilde -= addForceTilde;
-			spring->Point1.ForceTilde += addForceTilde;
 		}
 	}
 }
@@ -447,21 +440,12 @@ void MassSpringSystemSimulator::applyExternalForce(Vec3 force)
 
 #pragma region Initialisation
 
+// Initialisiert neuen Simulator
 MassSpringSystemSimulator::MassSpringSystemSimulator() :
-	m_v3ExternalForce(Vec3(0.0f)),
-	m_fSphereSize(0.0f),
-	m_fStiffness(0.0f),
-	m_fGravity(9.81f),
-	m_v2Oldtrackmouse{},
-	m_fDamping(0.0f),
-	m_iIntegrator(0),
-	m_v2Trackmouse{},
-	m_MassPoints{},
-	m_fMass(0.0f),
-	m_bRunningManualTest(true),
-	m_Springs{}
+	m_iIntegrator(0)
 {
 	m_iTestCase = 0;
+	reset();
 }
 
 #pragma endregion

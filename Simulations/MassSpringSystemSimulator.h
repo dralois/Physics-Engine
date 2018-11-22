@@ -75,7 +75,7 @@ private:
 	float							m_fDamping;
 	float							m_fGravity;
 	int								m_iIntegrator;
-	bool								m_bRunningManualTest;
+	bool							m_bRunningManualTest;
 
 	// Simulation Data
 	vector<Masspoint>	m_MassPoints;
@@ -89,11 +89,10 @@ private:
 
 	// Functions
 	Vec3 X_CalcSpringForce(Spring &spring, const Vec3 &point1, const Vec3 &point2);
-	void X_SetRunningManualTest(bool isRunningManualMode);
+	void X_InternalForcesCalculations();
 	void X_SetupDefaultDemo();
 	void X_SetupComplexDemo();
 	void X_ApplyBounding();
-	void X_InternalForcesCalculations();
 };
 
 #endif

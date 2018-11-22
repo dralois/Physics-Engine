@@ -1,8 +1,23 @@
 #ifndef RIGIDBODYSYSTEMSIMULATOR_h
 #define RIGIDBODYSYSTEMSIMULATOR_h
+
 #include "Simulator.h"
+#include "util/quaternion.h"
+#include "util/matrixbase.h"
+#include <algorithm>
+#include <vector>
 
 #define TESTCASEUSEDTORUNTEST 2
+
+struct Rigidbody
+{
+	Mat4 Translation;
+	Mat4 Rotation;
+	Mat4 Scale;
+	Vec3 LinVel;
+	Vec3 AngVel;
+	int Mass;
+};
 
 class RigidBodySystemSimulator:public Simulator{
 public:
@@ -31,13 +46,19 @@ public:
 	void setVelocityOf(int i, Vec3 velocity);
 
 private:
-	// Attributes
-	Vec3 m_externalForce;
+	// Data Attributes
+	Vec3 m_v3ExternalForce;
+
+	// Simulation Data
+	vector<Rigidbody>	m_Ridigbodies;
 
 	// UI Attributes
-	Point2D m_mouse;
-	Point2D m_trackmouse;
-	Point2D m_oldtrackmouse;
-	};
+	Point2D m_v2Oldtrackmouse;
+	Point2D m_v2Trackmouse;
+	Point2D m_v2Mouse;
+
+	// Functions
+	void X_SetupDemo(int demoNr);
+};
 
 #endif

@@ -2,7 +2,7 @@
 
 #pragma region Properties
 
-// Demos für Antweakbar
+// Demos f¨¹r Antweakbar
 const char * RigidBodySystemSimulator::getTestCasesStr()
 {
 	return "Demo 1,Demo 2,Demo 3,Demo 4";
@@ -112,7 +112,7 @@ void RigidBodySystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	}
 }
 
-// Setzte Simulation zurück
+// Setzte Simulation zur¨¹ck
 void RigidBodySystemSimulator::reset()
 {
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
@@ -148,7 +148,7 @@ void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCont
 void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 {
 	m_iTestCase = testCase;
-	// Setzte Simulation zurück
+	// Setzte Simulation zur¨¹ck
 	reset();
 	// Erstelle Demo Szene
 	X_SetupDemo(m_iTestCase);
@@ -194,7 +194,7 @@ void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 
 }
 
-// Fügt neuen Rigidbody hinzu
+// F¨¹gt neuen Rigidbody hinzu
 void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 {
 	// Matrizen aufbauen (beschreibt Ridigbody)
@@ -210,7 +210,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 	toAdd.Mass = mass;
 	toAdd.AngVel = Vec3(0.0f);
 	toAdd.LinVel = Vec3(0.0f);
-	// Zum Array hinzufügen
+	// Zum Array hinzuf¨¹gen
 	m_Ridigbodies.push_back(toAdd);
 }
 

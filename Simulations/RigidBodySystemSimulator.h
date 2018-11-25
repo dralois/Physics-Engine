@@ -1,4 +1,4 @@
-#ifndef RIGIDBODYSYSTEMSIMULATOR_h
+﻿#ifndef RIGIDBODYSYSTEMSIMULATOR_h
 #define RIGIDBODYSYSTEMSIMULATOR_h
 
 #include "Simulator.h"
@@ -50,7 +50,12 @@ private:
 	Vec3 m_v3ExternalForce;
 
 	// Simulation Data
-	vector<Rigidbody>	m_Ridigbodies;
+	vector<Rigidbody> m_Ridigbodies;
+
+	// Torque speichern
+	// Vielleicht besser: torque als Komponente von jedem Rigidbody zu speichern, aber ist es erlaubt, die Datenstruktur
+	// von Rigidbody Struct zu verändern?
+	vector<Vec3> m_Torques;
 
 	// UI Attributes
 	Point2D m_v2Oldtrackmouse;
@@ -59,6 +64,7 @@ private:
 
 	// Functions
 	void X_SetupDemo(int demoNr);
+	Mat4 X_calculateInertiaTensor(int i);
 };
 
 #endif

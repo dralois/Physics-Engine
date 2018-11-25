@@ -53,11 +53,17 @@ void RigidBodySystemSimulator::setVelocityOf(int i, Vec3 velocity)
 // TODO
 void RigidBodySystemSimulator::onClick(int x, int y)
 {
+	m_v2Trackmouse.x = x;
+	m_v2Trackmouse.y = y;
 }
 
 // TODO
 void RigidBodySystemSimulator::onMouse(int x, int y)
 {
+	m_v2Oldtrackmouse.x = x;
+	m_v2Oldtrackmouse.y = y;
+	m_v2Trackmouse.x = x;
+	m_v2Trackmouse.y = y;
 }
 
 #pragma endregion
@@ -179,18 +185,69 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 // TODO
 void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 {
+	// Problem: an welcher Ecke soll die Mauskraft wirken?
+}
 
+// TODO
+// Problem: Intertia Tensor ist eigentlich 3x3 Matrix, nicht 4x4
+Mat4 X_calculateInertiaTensor(int i)
+{
+	return Mat4(0);
 }
 
 // TODO
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
+	// Da wir brauchen noch Index f¨¹r vector m_Torques, hier ist es effizienter zu iterieren mit Index statt Iterator
+	for (int i = 0; i < m_Ridigbodies.size(); i++)
+	{
+		// Rotationsmatrix zu Quaternion
+		// Problem: keine vordefinierte Methode f¨¹r Matrix zu Quaternion, nur f¨¹r Quaternion zu Matrix
+		Quat oldRot = m_Ridigbodies[i].Rotation.getQuat();
 
+		// Euler Step: neue Rotation mit altem Angularvelocity zu berechnen
+		// Problem: Quaternion Multiplikation
+		Quat newRot = oldRot + Quat(0, m_Ridigbodies[i].AngVel) * oldRot * timestep / 2.0f;
+
+		// Rotation aktualisieren
+		m_Ridigbodies[i].Rotation = newRot.getRotMat();
+
+		// Inertia Tensor berechnen
+		Mat4 inertia = X_calculateInertiaTensor(i);
+
+		// Angular Momentum am Anfang
+		Vec3 momentum = inertia.transformVector(m_Ridigbodies[i].AngVel);
+
+		// Angular Momentum aktualisieren
+		momentum += timestep * m_Torques[i];
+
+		// Angular Velocity aktualisieren
+		m_Ridigbodies[i].AngVel = inertia.inverse().transformVector(momentum);
+
+	}
 }
 
 // TODO
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
+	/* Funktioniert nur unten folgenden zwei Bedingungen:
+
+		1. Kraft/Kollision passiert genau an einer Ecke (insgesamt 8 Ecken f¨¹r eine Box)
+		2. Es kann maximal gleichzeig nur eine Kraft/Kollision an diesem Objekt passieren
+	*/
+
+	Rigidbody collider = m_Ridigbodies[i];
+	
+	// die Kraftsposition in local space umrechnen
+	// Problem: Mat4 ist 4x4 Matrix aber Vec3 ist nur eine 3d Vektor
+	Vec3 locLocal = (collider.Rotation.inverse() * collider.Translation.inverse()).transformVector(loc);
+	
+	// Torque berechnen
+	// Problem: keine vordefinierte Cross Product Methode in Vec3
+	Vec3 torque = locLocal.operator * force;
+
+	// Torque aktualisieren
+	m_Torques[i] = torque;
 
 }
 
@@ -212,6 +269,10 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 	toAdd.LinVel = Vec3(0.0f);
 	// Zum Array hinzuf¨¹gen
 	m_Ridigbodies.push_back(toAdd);
+
+	// Torque zu dem neuen Rigidbody hinzuf¨¹gen
+	Vec3 torque = Vec3(.0f, .0f, .0f);
+	m_Torques.push_back(torque);
 }
 
 #pragma endregion

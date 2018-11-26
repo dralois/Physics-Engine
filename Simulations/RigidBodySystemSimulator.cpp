@@ -106,15 +106,15 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 	Mat4 inertia(0);
 	// x = width, y = height, z = depth
 	Vec3 trans, scale, rot, shear;
-	rb.Translation.decompose(trans, scale, rot, shear);
+	rb.Scale.decompose(trans, scale, rot, shear);
 	// 1/12 * m * (h^2 + d^2)
-	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(scale.y,2) + powf(scale.z,2));
+	inertia.value[0][0] = 1.0f / 12 * rb.Mass * (powf(scale.y,2) + powf(scale.z,2));
 	// 1/12 * m * (w^2 + d^2)
-	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.z, 2));
+	inertia.value[1][1] = 1.0f / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.z, 2));
 	// 1/12 * m * (w^2 + h^2)
-	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.y, 2));
+	inertia.value[2][2] = 1.0f / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.y, 2));
 	// vierte Dimension einfach auf 1 
-	inertia.value[0][0] = 1;
+	inertia.value[3][3] = 1.0f;
 	// Speichere Inverses
 	rb.InertiaTensor = inertia.inverse();
 }

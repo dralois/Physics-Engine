@@ -1,8 +1,8 @@
-#include "RigidBodySystemSimulator.h"
+ï»¿#include "RigidBodySystemSimulator.h"
 
 #pragma region Properties
 
-// Demos für Antweakbar
+// Demos fÃ¼r Antweakbar
 const char * RigidBodySystemSimulator::getTestCasesStr()
 {
 	return "Demo 1,Demo 2,Demo 3,Demo 4";
@@ -50,7 +50,7 @@ void RigidBodySystemSimulator::setVelocityOf(int i, Vec3 velocity)
 
 #pragma region Events
 
-// Mausbewegung während Klicken
+// Mausbewegung wÃ¤hrend Klicken
 void RigidBodySystemSimulator::onClick(int x, int y)
 {
 	m_v2Trackmouse.x = x;
@@ -100,7 +100,7 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 	}
 }
 
-// Berechnet Inertia Tensor für einen Rigidbody
+// Berechnet Inertia Tensor fÃ¼r einen Rigidbody
 void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 {
 	Mat4 inertia(0);
@@ -137,7 +137,7 @@ void RigidBodySystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	}
 }
 
-// Setzte Simulation zurück
+// Setzte Simulation zurÃ¼ck
 void RigidBodySystemSimulator::reset()
 {
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
@@ -173,7 +173,7 @@ void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCont
 void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 {
 	m_iTestCase = testCase;
-	// Setzte Simulation zur¨¹ck
+	// Setzte Simulation zurÃ¼ck
 	reset();
 	// Erstelle Demo Szene
 	X_SetupDemo(m_iTestCase);
@@ -236,7 +236,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Mat4 rotTransp = rb->Rotation;
 		rotTransp.transpose();
 
-		// Trägheitsmoment updaten
+		// InverseMoment updaten
 		Mat4 inertiaTensorInv = rb->Rotation * rb->InertiaTensorInv * rotTransp;
 
 		// Winkelgeschwindigkeit aktualisieren
@@ -262,7 +262,7 @@ void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 	collider.Force += force;
 }
 
-// Fügt neuen Rigidbody hinzu
+// FÃ¼gt neuen Rigidbody hinzu
 void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass)
 {
 	// Matrizen aufbauen (beschreibt Ridigbody)
@@ -282,7 +282,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass
 	toAdd.Torque = Vec3(0.0f);
 	toAdd.AngMom = Vec3(0.0f);
 	X_CalculateInertiaTensor(toAdd);
-	// Zum Array hinzufügen
+	// Zum Array hinzufÃ¼gen
 	m_Ridigbodies.push_back(toAdd);
 }
 

@@ -116,7 +116,7 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 	// vierte Dimension einfach auf 1 
 	inertia.value[3][3] = 1.0f;
 	// Speichere Inverses
-	rb.InertiaTensor = inertia.inverse();
+	rb.InertiaTensorInv = inertia.inverse();
 }
 
 #pragma endregion
@@ -218,13 +218,13 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		trans += timeStep * rb->LinVel;
 		transMat.initTranslation(trans.x, trans.y, trans.z);
 		rb->Translation = transMat;
-		rb->LinVel += timeStep * (rb->Force / rb->Mass);
+		rb->LinVel += timeStep * (rb->Force / (rb->Mass * 1.0f));
 
 		// Rotationsmatrix zu Quaternion
 		Quat oldRot = Quat(rb->Rotation);
 
 		// Euler Step: Neue Rotation mit alter Winkelgeschwindigkeit berechnen
-		Quat newRot = oldRot + Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z) * oldRot * (timeStep / 2.0f);
+		Quat newRot = oldRot + Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot * (timeStep / 2.0f);
 
 		// Rotation aktualisieren
 		rb->Rotation = newRot.getRotMat();
@@ -237,10 +237,10 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		rotTransp.transpose();
 
 		// Trägheitsmoment updaten
-		rb->InertiaTensor = rb->Rotation * rb->InertiaTensor * rotTransp;
+		Mat4 inertiaTensorInv = rb->Rotation * rb->InertiaTensorInv * rotTransp;
 
 		// Winkelgeschwindigkeit aktualisieren
-		rb->AngVel = rb->InertiaTensor.transformVector(rb->AngMom);
+		rb->AngVel = inertiaTensorInv.transformVector(rb->AngMom);
 		
 		// Reset Torque und Force
 		rb->Force = Vec3(0.0f);
@@ -252,12 +252,13 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
 	Rigidbody &collider = m_Ridigbodies[i];
-
-	// die Kraftsposition in local space umrechnen
-	Vec3 world2Obj = (collider.Rotation * collider.Translation).inverse().transformVector(loc);
-
+	// World to Object Matrix
+	Mat4 world2Obj = (collider.Rotation * collider.Translation).inverse();
+	// Die Kraftsposition und Kraftrichtung in local space umrechnen
+	Vec3 v3PosLocal = world2Obj.transformVector(loc);
+	Vec3 v3ForceLocal = world2Obj.transformVector(force);
 	// Torque & Force aktualisieren
-	collider.Torque += cross(world2Obj, force);
+	collider.Torque += cross(v3PosLocal, v3ForceLocal);
 	collider.Force += force;
 }
 

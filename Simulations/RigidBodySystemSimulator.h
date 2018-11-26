@@ -19,7 +19,7 @@ struct Rigidbody
 	Vec3 AngMom;
 	Vec3 Torque;
 	Vec3 Force;
-	Mat4 InertiaTensor;
+	Mat4 InertiaTensorInv;
 	int Mass;
 };
 

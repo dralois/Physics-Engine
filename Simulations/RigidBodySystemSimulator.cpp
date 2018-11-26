@@ -2,7 +2,7 @@
 
 #pragma region Properties
 
-// Demos f¨¹r Antweakbar
+// Demos für Antweakbar
 const char * RigidBodySystemSimulator::getTestCasesStr()
 {
 	return "Demo 1,Demo 2,Demo 3,Demo 4";
@@ -50,14 +50,14 @@ void RigidBodySystemSimulator::setVelocityOf(int i, Vec3 velocity)
 
 #pragma region Events
 
-// TODO
+// Mausbewegung während Klicken
 void RigidBodySystemSimulator::onClick(int x, int y)
 {
 	m_v2Trackmouse.x = x;
 	m_v2Trackmouse.y = y;
 }
 
-// TODO
+// Mausbewegung normal
 void RigidBodySystemSimulator::onMouse(int x, int y)
 {
 	m_v2Oldtrackmouse.x = x;
@@ -100,6 +100,25 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 	}
 }
 
+// Berechnet Inertia Tensor für einen Rigidbody
+Mat4 RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
+{
+	Mat4 inertia(0);
+	// x = width, y = height, z = depth
+	Vec3 trans, scale, rot, shear;
+	rb.Translation.decompose(trans, scale, rot, shear);
+	// 1/12 * m * (h^2 + d^2)
+	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(trans.y,2) + powf(trans.z,2));
+	// 1/12 * m * (w^2 + d^2)
+	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(trans.x, 2) + powf(trans.z, 2));
+	// 1/12 * m * (w^2 + h^2)
+	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(trans.x, 2) + powf(trans.y, 2));
+	// vierte Dimension einfach auf 1 
+	inertia.value[0][0] = 1;
+	// Speichere
+	rb.InertiaTensor = inertia;
+}
+
 #pragma endregion
 
 // Initialisiere UI je nach Demo
@@ -118,7 +137,7 @@ void RigidBodySystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	}
 }
 
-// Setzte Simulation zur¨¹ck
+// Setzte Simulation zurück
 void RigidBodySystemSimulator::reset()
 {
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
@@ -189,41 +208,25 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 }
 
 // TODO
-// Problem: Intertia Tensor ist eigentlich 3x3 Matrix, nicht 4x4
-Mat4 X_calculateInertiaTensor(int i)
-{
-	return Mat4(0);
-}
-
-// TODO
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
-	// Da wir brauchen noch Index f¨¹r vector m_Torques, hier ist es effizienter zu iterieren mit Index statt Iterator
-	for (int i = 0; i < m_Ridigbodies.size(); i++)
+	for (auto rb = m_Ridigbodies.begin(); rb != m_Ridigbodies.end(); rb++)
 	{
 		// Rotationsmatrix zu Quaternion
-		// Problem: keine vordefinierte Methode f¨¹r Matrix zu Quaternion, nur f¨¹r Quaternion zu Matrix
-		Quat oldRot = m_Ridigbodies[i].Rotation.getQuat();
+		Quat oldRot = Quat(rb->Rotation);
 
-		// Euler Step: neue Rotation mit altem Angularvelocity zu berechnen
-		// Problem: Quaternion Multiplikation
-		Quat newRot = oldRot + Quat(0, m_Ridigbodies[i].AngVel) * oldRot * timestep / 2.0f;
+		// Euler Step: Neue Rotation mit alter Winkelgeschwindigkeit berechnen
+		Quat newRot = oldRot + Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z) * oldRot * (timeStep / 2.0f);
 
 		// Rotation aktualisieren
-		m_Ridigbodies[i].Rotation = newRot.getRotMat();
+		rb->Rotation = newRot.getRotMat();
 
-		// Inertia Tensor berechnen
-		Mat4 inertia = X_calculateInertiaTensor(i);
+		// Drehimpuls updaten
+		Vec3 momentum = rb->InertiaTensor.transformVector(rb->AngVel);
+		momentum += timeStep * rb->Torque;
 
-		// Angular Momentum am Anfang
-		Vec3 momentum = inertia.transformVector(m_Ridigbodies[i].AngVel);
-
-		// Angular Momentum aktualisieren
-		momentum += timestep * m_Torques[i];
-
-		// Angular Velocity aktualisieren
-		m_Ridigbodies[i].AngVel = inertia.inverse().transformVector(momentum);
-
+		// Winkelgeschwindigkeit aktualisieren
+		rb->AngVel = rb->InertiaTensor.inverse().transformVector(momentum);
 	}
 }
 
@@ -232,26 +235,24 @@ void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
 	/* Funktioniert nur unten folgenden zwei Bedingungen:
 
-		1. Kraft/Kollision passiert genau an einer Ecke (insgesamt 8 Ecken f¨¹r eine Box)
+		1. Kraft/Kollision passiert genau an einer Ecke (insgesamt 8 Ecken für eine Box)
 		2. Es kann maximal gleichzeig nur eine Kraft/Kollision an diesem Objekt passieren
 	*/
 
 	Rigidbody collider = m_Ridigbodies[i];
 	
 	// die Kraftsposition in local space umrechnen
-	// Problem: Mat4 ist 4x4 Matrix aber Vec3 ist nur eine 3d Vektor
 	Vec3 locLocal = (collider.Rotation.inverse() * collider.Translation.inverse()).transformVector(loc);
 	
 	// Torque berechnen
-	// Problem: keine vordefinierte Cross Product Methode in Vec3
-	Vec3 torque = locLocal.operator * force;
+	Vec3 torque = cross(locLocal, force);
 
 	// Torque aktualisieren
-	m_Torques[i] = torque;
+	collider.Torque = torque;
 
 }
 
-// F¨¹gt neuen Rigidbody hinzu
+// Fügt neuen Rigidbody hinzu
 void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 {
 	// Matrizen aufbauen (beschreibt Ridigbody)
@@ -267,12 +268,10 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 	toAdd.Mass = mass;
 	toAdd.AngVel = Vec3(0.0f);
 	toAdd.LinVel = Vec3(0.0f);
-	// Zum Array hinzuf¨¹gen
+	toAdd.Torque = Vec3(0.0f);
+	X_CalculateInertiaTensor(toAdd);
+	// Zum Array hinzufügen
 	m_Ridigbodies.push_back(toAdd);
-
-	// Torque zu dem neuen Rigidbody hinzuf¨¹gen
-	Vec3 torque = Vec3(.0f, .0f, .0f);
-	m_Torques.push_back(torque);
 }
 
 #pragma endregion

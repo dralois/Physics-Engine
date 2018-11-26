@@ -16,6 +16,8 @@ struct Rigidbody
 	Mat4 Scale;
 	Vec3 LinVel;
 	Vec3 AngVel;
+	Vec3 Torque;
+	Mat4 InertiaTensor;
 	int Mass;
 };
 
@@ -47,24 +49,19 @@ public:
 
 private:
 	// Data Attributes
-	Vec3 m_v3ExternalForce;
+	Vec3							m_v3ExternalForce;
 
 	// Simulation Data
-	vector<Rigidbody> m_Ridigbodies;
-
-	// Torque speichern
-	// Vielleicht besser: torque als Komponente von jedem Rigidbody zu speichern, aber ist es erlaubt, die Datenstruktur
-	// von Rigidbody Struct zu verändern?
-	vector<Vec3> m_Torques;
+	vector<Rigidbody>	m_Ridigbodies;
 
 	// UI Attributes
-	Point2D m_v2Oldtrackmouse;
-	Point2D m_v2Trackmouse;
-	Point2D m_v2Mouse;
+	Point2D						m_v2Oldtrackmouse;
+	Point2D						m_v2Trackmouse;
+	Point2D						m_v2Mouse;
 
 	// Functions
 	void X_SetupDemo(int demoNr);
-	Mat4 X_calculateInertiaTensor(int i);
+	Mat4 X_CalculateInertiaTensor(Rigidbody & rb);
 };
 
 #endif

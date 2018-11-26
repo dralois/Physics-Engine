@@ -255,8 +255,14 @@ void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 	// World to Object Matrix
 	Mat4 world2Obj = (collider.Rotation * collider.Translation).inverse();
 	// Die Kraftsposition und Kraftrichtung in local space umrechnen
-	Vec3 v3PosLocal = loc; // world2Obj.transformVector(loc);
+
+	// semi-local space
+	Mat4 transMat = collider.Translation;
+	Vec3 trans, scale, rot, shear;
+	transMat.decompose(trans, scale, rot, shear);
+	Vec3 v3PosLocal = loc - trans; // world2Obj.transformVector(loc);
 	Vec3 v3ForceLocal = force; // world2Obj.transformVector(force);
+
 	// Torque & Force aktualisieren
 	collider.Torque += cross(v3PosLocal, v3ForceLocal);
 	collider.Force += force;

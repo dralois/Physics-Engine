@@ -224,7 +224,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Quat oldRot = Quat(rb->Rotation);
 
 		// Euler Step: Neue Rotation mit alter Winkelgeschwindigkeit berechnen
-		Quat newRot = oldRot + Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot * (timeStep / 2.0f);
+		Quat newRot = oldRot + (Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot) * (timeStep / 2.0f);
 
 		// Rotation aktualisieren
 		rb->Rotation = newRot.getRotMat();
@@ -240,7 +240,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Mat4 inertiaTensorInv = rb->Rotation * rb->InertiaTensorInv * rotTransp;
 
 		// Winkelgeschwindigkeit aktualisieren
-		rb->AngVel = inertiaTensorInv.transformVector(rb->AngMom);
+		rb->AngVel = inertiaTensorInv * rb->AngMom;
 		
 		// Reset Torque und Force
 		rb->Force = Vec3(0.0f);
@@ -255,15 +255,15 @@ void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 	// World to Object Matrix
 	Mat4 world2Obj = (collider.Rotation * collider.Translation).inverse();
 	// Die Kraftsposition und Kraftrichtung in local space umrechnen
-	Vec3 v3PosLocal = world2Obj.transformVector(loc);
-	Vec3 v3ForceLocal = world2Obj.transformVector(force);
+	Vec3 v3PosLocal = loc; // world2Obj.transformVector(loc);
+	Vec3 v3ForceLocal = force; // world2Obj.transformVector(force);
 	// Torque & Force aktualisieren
 	collider.Torque += cross(v3PosLocal, v3ForceLocal);
 	collider.Force += force;
 }
 
 // Fügt neuen Rigidbody hinzu
-void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
+void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass)
 {
 	// Matrizen aufbauen (beschreibt Ridigbody)
 	Mat4 trans, scale, rot;

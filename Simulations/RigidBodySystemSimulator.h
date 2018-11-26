@@ -16,7 +16,9 @@ struct Rigidbody
 	Mat4 Scale;
 	Vec3 LinVel;
 	Vec3 AngVel;
+	Vec3 AngMom;
 	Vec3 Torque;
+	Vec3 Force;
 	Mat4 InertiaTensor;
 	int Mass;
 };
@@ -61,7 +63,7 @@ private:
 
 	// Functions
 	void X_SetupDemo(int demoNr);
-	Mat4 X_CalculateInertiaTensor(Rigidbody & rb);
+	void X_CalculateInertiaTensor(Rigidbody & rb);
 };
 
 #endif

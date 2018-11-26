@@ -101,22 +101,22 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 }
 
 // Berechnet Inertia Tensor für einen Rigidbody
-Mat4 RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
+void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 {
 	Mat4 inertia(0);
 	// x = width, y = height, z = depth
 	Vec3 trans, scale, rot, shear;
 	rb.Translation.decompose(trans, scale, rot, shear);
 	// 1/12 * m * (h^2 + d^2)
-	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(trans.y,2) + powf(trans.z,2));
+	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(scale.y,2) + powf(scale.z,2));
 	// 1/12 * m * (w^2 + d^2)
-	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(trans.x, 2) + powf(trans.z, 2));
+	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.z, 2));
 	// 1/12 * m * (w^2 + h^2)
-	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(trans.x, 2) + powf(trans.y, 2));
+	inertia.value[0][0] = 1 / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.y, 2));
 	// vierte Dimension einfach auf 1 
 	inertia.value[0][0] = 1;
-	// Speichere
-	rb.InertiaTensor = inertia;
+	// Speichere Inverses
+	rb.InertiaTensor = inertia.inverse();
 }
 
 #pragma endregion
@@ -201,17 +201,25 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	}
 }
 
-// TODO
+// Tut momentan nichts
 void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-	// Problem: an welcher Ecke soll die Mauskraft wirken?
+	return;
 }
 
-// TODO
+// Simuliert Positions, Rotations usw. Update
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
 	for (auto rb = m_Ridigbodies.begin(); rb != m_Ridigbodies.end(); rb++)
 	{
+		Mat4 transMat = rb->Translation;
+		Vec3 trans, scale, rot, shear;
+		transMat.decompose(trans, scale, rot, shear);
+		trans += timeStep * rb->LinVel;
+		transMat.initTranslation(trans.x, trans.y, trans.z);
+		rb->Translation = transMat;
+		rb->LinVel += timeStep * (rb->Force / rb->Mass);
+
 		// Rotationsmatrix zu Quaternion
 		Quat oldRot = Quat(rb->Rotation);
 
@@ -222,34 +230,35 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		rb->Rotation = newRot.getRotMat();
 
 		// Drehimpuls updaten
-		Vec3 momentum = rb->InertiaTensor.transformVector(rb->AngVel);
-		momentum += timeStep * rb->Torque;
+		rb->AngMom += timeStep * rb->Torque;
+
+		// Transponierte Rotationsmatrix
+		Mat4 rotTransp = rb->Rotation;
+		rotTransp.transpose();
+
+		// Trägheitsmoment updaten
+		rb->InertiaTensor = rb->Rotation * rb->InertiaTensor * rotTransp;
 
 		// Winkelgeschwindigkeit aktualisieren
-		rb->AngVel = rb->InertiaTensor.inverse().transformVector(momentum);
+		rb->AngVel = rb->InertiaTensor.transformVector(rb->AngMom);
+		
+		// Reset Torque und Force
+		rb->Force = Vec3(0.0f);
+		rb->Torque = Vec3(0.0f);
 	}
 }
 
-// TODO
+// Wendet Kraft auf Rigidbody an
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
-	/* Funktioniert nur unten folgenden zwei Bedingungen:
+	Rigidbody &collider = m_Ridigbodies[i];
 
-		1. Kraft/Kollision passiert genau an einer Ecke (insgesamt 8 Ecken für eine Box)
-		2. Es kann maximal gleichzeig nur eine Kraft/Kollision an diesem Objekt passieren
-	*/
-
-	Rigidbody collider = m_Ridigbodies[i];
-	
 	// die Kraftsposition in local space umrechnen
-	Vec3 locLocal = (collider.Rotation.inverse() * collider.Translation.inverse()).transformVector(loc);
-	
-	// Torque berechnen
-	Vec3 torque = cross(locLocal, force);
+	Vec3 world2Obj = (collider.Rotation * collider.Translation).inverse().transformVector(loc);
 
-	// Torque aktualisieren
-	collider.Torque = torque;
-
+	// Torque & Force aktualisieren
+	collider.Torque += cross(world2Obj, force);
+	collider.Force += force;
 }
 
 // Fügt neuen Rigidbody hinzu
@@ -266,9 +275,11 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, int mass)
 	toAdd.Rotation = rot;
 	toAdd.Scale = scale;
 	toAdd.Mass = mass;
+	toAdd.Force = Vec3(0.0f);
 	toAdd.AngVel = Vec3(0.0f);
 	toAdd.LinVel = Vec3(0.0f);
 	toAdd.Torque = Vec3(0.0f);
+	toAdd.AngMom = Vec3(0.0f);
 	X_CalculateInertiaTensor(toAdd);
 	// Zum Array hinzufügen
 	m_Ridigbodies.push_back(toAdd);

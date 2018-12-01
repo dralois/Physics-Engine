@@ -84,9 +84,12 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 		break;
 	case 1:
 		addRigidBody(Vec3(0.0f), Vec3(1, 0.6, 0.5), 2);
+		setOrientationOf(0, Quat::Quaternion(Vec3(0, 0, 1), (float)(M_PI)* 0.5f));
+		applyForceOnBody(0, Vec3(0.3, 0.5, 0.25), Vec3(1, 1, 0));
 		break;
 	case 2:
 		addRigidBody(Vec3(0.0f), Vec3(1, 0.6, 0.5), 2);
+		applyForceOnBody(0, Vec3(0.0f), Vec3(10, 10, 10));
 		addRigidBody(Vec3(2.0f), Vec3(1, 0.6, 0.5), 2);
 		break;
 	case 3:
@@ -119,6 +122,33 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 	rb.InertiaTensorInv = inertia.inverse();
 }
 
+// Berechnet Impuls
+void RigidBodySystemSimulator::X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & rb_B, CollisionInfo & coll)
+{
+	// Relative Geschwindigkeit -> Stimmt das so? Ist Angular egal?
+	Vec3 rVel = rb_A.LinVel - rb_B.LinVel;
+	// Abbruch falls Separierung
+	if (dot(rVel, coll.normalWorld) > 0)
+		return;
+	// Position der Kollision lokal in A und B
+	Vec3 trans, scale, rot, shear;
+	rb_A.Translation.decompose(trans, scale, rot, shear);
+	Vec3 xA = coll.collisionPointWorld - trans;
+	rb_B.Translation.decompose(trans, scale, rot, shear);
+	Vec3 xB = coll.collisionPointWorld - trans;
+	// Vorberechnung Winkelgeschwindigkeit
+	Vec3 inertA = cross(rb_A.InertiaTensorInv * cross(xA, coll.normalWorld), xA);
+	Vec3 inertB = cross(rb_B.InertiaTensorInv * cross(xB, coll.normalWorld), xB);
+	// Impuls Formel
+	Vec3 J = (-1.0f * (1.0f + m_fCollisionCoefficient) * rVel * coll.normalWorld) /
+		((1.0f / rb_A.Mass) + (1.0f / rb_B.Mass) + (inertA + inertB) * coll.normalWorld);
+	// Anwenden
+	rb_A.LinVel += J * coll.normalWorld / rb_A.Mass;
+	rb_B.LinVel -= J * coll.normalWorld / rb_B.Mass;
+	rb_A.AngVel += cross(xA, J * coll.normalWorld);
+	rb_B.AngVel -= cross(xB, J * coll.normalWorld);
+}
+
 #pragma endregion
 
 // Initialisiere UI je nach Demo
@@ -131,6 +161,7 @@ void RigidBodySystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	case 1:
 	case 2:
 	case 3:
+		TwAddVarRW(DUC->g_pTweakBar, "Collision C", TW_TYPE_FLOAT, &m_fCollisionCoefficient, "min=0.00 max=1.00 step=0.01");
 		break;
 	default:
 		break;
@@ -143,6 +174,7 @@ void RigidBodySystemSimulator::reset()
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_v3ExternalForce = Vec3(0.0f);
+	m_fCollisionCoefficient = 1.0f;
 	m_Ridigbodies.clear();
 }
 
@@ -212,6 +244,25 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
 	for (auto rb = m_Ridigbodies.begin(); rb != m_Ridigbodies.end(); rb++)
 	{
+		// Kollisionscheck
+		for (auto collider = m_Ridigbodies.begin(); collider != m_Ridigbodies.end(); collider++)
+		{
+			// Kann nicht mit sich selbst kollidieren
+			if (collider == rb)
+				continue;
+			// Erstelle Matrizen
+			Mat4 obj2World_A = rb->Scale * rb->Rotation * rb->Translation;
+			Mat4 obj2World_B = collider->Scale * collider->Rotation * collider->Translation;
+			// Kollision simulieren
+			CollisionInfo check = checkCollisionSAT(obj2World_A, obj2World_B);
+			// Falls gültig
+			if (check.isValid)
+			{
+				X_CalculateImpulse(*rb, *collider, check);
+			}
+		}
+
+		// Geschwindigkeitsupdate und Positionsupdate
 		Mat4 transMat = rb->Translation;
 		Vec3 trans, scale, rot, shear;
 		transMat.decompose(trans, scale, rot, shear);

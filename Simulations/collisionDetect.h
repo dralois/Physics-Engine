@@ -1,5 +1,7 @@
 ﻿// header file:
 #include <DirectXMath.h>
+#include "util/vectorbase.h"
+#include "util/matrixbase.h"
 #include <Vector>
 using namespace DirectX;
 

@@ -4,6 +4,7 @@
 #include "Simulator.h"
 #include "util/quaternion.h"
 #include "util/matrixbase.h"
+#include "collisionDetect.h"
 #include <algorithm>
 #include <vector>
 
@@ -52,6 +53,7 @@ public:
 private:
 	// Data Attributes
 	Vec3							m_v3ExternalForce;
+	float							m_fCollisionCoefficient;
 
 	// Simulation Data
 	vector<Rigidbody>	m_Ridigbodies;
@@ -64,6 +66,7 @@ private:
 	// Functions
 	void X_SetupDemo(int demoNr);
 	void X_CalculateInertiaTensor(Rigidbody & rb);
+	void X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & rb_B, CollisionInfo & coll);
 };
 
 #endif

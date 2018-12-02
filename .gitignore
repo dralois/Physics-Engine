@@ -41,11 +41,14 @@
 *.idb
 *.iobj
 *.ipdb
-*.cache
+*.fxo
+*.ilk
+*.exp
+
+# Folders
 .vs/*
-Simulations/Win32/*
-Simulations/x64/*
-Simulations/x86/*
-SimulationsTester/Win32/*
-SimulationsTester/x64/*
-SimulationsTester/x86/*
+*/Debug/*
+*/Release/*
+*/Win32/*
+*/x64/*
+*/x86/*

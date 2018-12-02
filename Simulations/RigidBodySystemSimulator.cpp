@@ -125,28 +125,50 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 // Berechnet Impuls
 void RigidBodySystemSimulator::X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & rb_B, CollisionInfo & coll)
 {
-	// Relative Geschwindigkeit -> Stimmt das so? Ist Angular egal?
-	Vec3 rVel = rb_A.LinVel - rb_B.LinVel;
-	// Abbruch falls Separierung
-	if (dot(rVel, coll.normalWorld) > 0)
+	// Nur damit beschäftigen, wenn es wirklich eine Kollision gibt
+	if (!coll.isValid)
 		return;
-	// Position der Kollision lokal in A und B
-	Vec3 trans, scale, rot, shear;
-	rb_A.Translation.decompose(trans, scale, rot, shear);
-	Vec3 xA = coll.collisionPointWorld - trans;
-	rb_B.Translation.decompose(trans, scale, rot, shear);
-	Vec3 xB = coll.collisionPointWorld - trans;
-	// Vorberechnung Winkelgeschwindigkeit
-	Vec3 inertA = cross(rb_A.InertiaTensorInv * cross(xA, coll.normalWorld), xA);
-	Vec3 inertB = cross(rb_B.InertiaTensorInv * cross(xB, coll.normalWorld), xB);
+
+	// Velocity und local Position von A
+	Vec3 transA, scaleA, rotA, shearA;
+	rb_A.Translation.decompose(transA, scaleA, rotA, shearA);
+	Vec3 xa = coll.collisionPointWorld - transA;
+	Vec3 va = rb_A.LinVel + cross(rb_A.AngVel, xa);
+
+	// Velocity local Position von B
+	Vec3 transB, scaleB, rotB, shearB;
+	rb_B.Translation.decompose(transB, scaleB, rotB, shearB);
+	Vec3 xb = coll.collisionPointWorld - transB;
+	Vec3 vb = rb_B.LinVel + cross(rb_B.AngVel, xb);
+
+	// Relative Geschwindigkeit
+	Vec3 rVel = va - vb;
+
+	// (Ia.inverse * (Xa cross n)) cross Xa
+	Mat4 rotTranspA = rb_A.Rotation;
+	rotTranspA.transpose();
+	Mat4 inertiaTensorInvA = rotTranspA * rb_A.InertiaTensorInv * rb_A.Rotation;
+	Vec3 helpA = cross(inertiaTensorInvA.transformVectorNormal(cross(xa, coll.normalWorld)), xa);
+
+	// (Ib.inverse * (Xb cross n)) cross Xb
+	Mat4 rotTranspB = rb_B.Rotation;
+	rotTranspB.transpose();
+	Mat4 inertiaTensorInvB = rotTranspB * rb_B.InertiaTensorInv * rb_B.Rotation;
+	Vec3 helpB = cross(inertiaTensorInvB.transformVectorNormal(cross(xb, coll.normalWorld)), xb);
+
 	// Impuls Formel
 	Vec3 J = (-1.0f * (1.0f + m_fCollisionCoefficient) * rVel * coll.normalWorld) /
-		((1.0f / rb_A.Mass) + (1.0f / rb_B.Mass) + (inertA + inertB) * coll.normalWorld);
+		((1.0f / rb_A.Mass) + (1.0f / rb_B.Mass) + ((helpA + helpB) * coll.normalWorld));
+
 	// Anwenden
 	rb_A.LinVel += J * coll.normalWorld / rb_A.Mass;
 	rb_B.LinVel -= J * coll.normalWorld / rb_B.Mass;
-	rb_A.AngVel += cross(xA, J * coll.normalWorld);
-	rb_B.AngVel -= cross(xB, J * coll.normalWorld);
+
+	rb_A.AngMom += cross(xa, J * coll.normalWorld);
+	rb_B.AngMom -= cross(xb, J * coll.normalWorld);
+
+	rb_A.AngVel = inertiaTensorInvA.transformVector(rb_A.AngMom);
+	rb_B.AngVel = inertiaTensorInvB.transformVector(rb_B.AngMom);
 }
 
 #pragma endregion
@@ -250,11 +272,14 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 			// Kann nicht mit sich selbst kollidieren
 			if (collider == rb)
 				continue;
+
 			// Erstelle Matrizen
 			Mat4 obj2World_A = rb->Scale * rb->Rotation * rb->Translation;
 			Mat4 obj2World_B = collider->Scale * collider->Rotation * collider->Translation;
+
 			// Kollision simulieren
 			CollisionInfo check = checkCollisionSAT(obj2World_A, obj2World_B);
+
 			// Falls gültig
 			if (check.isValid)
 			{
@@ -283,15 +308,13 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		// Drehimpuls updaten
 		rb->AngMom += timeStep * rb->Torque;
 
-		// Transponierte Rotationsmatrix
+		// InverseMoment updaten
 		Mat4 rotTransp = rb->Rotation;
 		rotTransp.transpose();
-
-		// InverseMoment updaten
-		Mat4 inertiaTensorInv = rb->Rotation * rb->InertiaTensorInv * rotTransp;
+		Mat4 inertiaTensorInv = rotTransp * rb->InertiaTensorInv * rb->Rotation;
 
 		// Winkelgeschwindigkeit aktualisieren
-		rb->AngVel = inertiaTensorInv * rb->AngMom;
+		rb->AngVel = inertiaTensorInv.transformVector(rb->AngMom);
 		
 		// Reset Torque und Force
 		rb->Force = Vec3(0.0f);
@@ -303,19 +326,16 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
 	Rigidbody &collider = m_Ridigbodies[i];
-	// World to Object Matrix
-	Mat4 world2Obj = (collider.Rotation * collider.Translation).inverse();
+	
 	// Die Kraftsposition und Kraftrichtung in local space umrechnen
-
 	// semi-local space
 	Mat4 transMat = collider.Translation;
 	Vec3 trans, scale, rot, shear;
 	transMat.decompose(trans, scale, rot, shear);
-	Vec3 v3PosLocal = loc - trans; // world2Obj.transformVector(loc);
-	Vec3 v3ForceLocal = force; // world2Obj.transformVector(force);
+	Vec3 v3PosLocal = loc - trans;
 
 	// Torque & Force aktualisieren
-	collider.Torque += cross(v3PosLocal, v3ForceLocal);
+	collider.Torque += cross(v3PosLocal, force);
 	collider.Force += force;
 }
 

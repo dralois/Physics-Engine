@@ -166,9 +166,6 @@ void RigidBodySystemSimulator::X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & 
 
 	rb_A.AngMom += cross(xa, J * coll.normalWorld);
 	rb_B.AngMom -= cross(xb, J * coll.normalWorld);
-
-	rb_A.AngVel = inertiaTensorInvA.transformVector(rb_A.AngMom);
-	rb_B.AngVel = inertiaTensorInvB.transformVector(rb_B.AngMom);
 }
 
 #pragma endregion
@@ -266,27 +263,6 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
 	for (auto rb = m_Ridigbodies.begin(); rb != m_Ridigbodies.end(); rb++)
 	{
-		// Kollisionscheck
-		for (auto collider = m_Ridigbodies.begin(); collider != m_Ridigbodies.end(); collider++)
-		{
-			// Kann nicht mit sich selbst kollidieren
-			if (collider == rb)
-				continue;
-
-			// Erstelle Matrizen
-			Mat4 obj2World_A = rb->Scale * rb->Rotation * rb->Translation;
-			Mat4 obj2World_B = collider->Scale * collider->Rotation * collider->Translation;
-
-			// Kollision simulieren
-			CollisionInfo check = checkCollisionSAT(obj2World_A, obj2World_B);
-
-			// Falls gültig
-			if (check.isValid)
-			{
-				X_CalculateImpulse(*rb, *collider, check);
-			}
-		}
-
 		// Geschwindigkeitsupdate und Positionsupdate
 		Mat4 transMat = rb->Translation;
 		Vec3 trans, scale, rot, shear;
@@ -312,10 +288,31 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Mat4 rotTransp = rb->Rotation;
 		rotTransp.transpose();
 		Mat4 inertiaTensorInv = rotTransp * rb->InertiaTensorInv * rb->Rotation;
+		
+		// Kollisionscheck
+		for (auto collider = m_Ridigbodies.begin(); collider != m_Ridigbodies.end(); collider++)
+		{
+			// Kann nicht mit sich selbst kollidieren
+			if (collider == rb)
+				continue;
+
+			// Erstelle Matrizen
+			Mat4 obj2World_A = rb->Scale * rb->Rotation * rb->Translation;
+			Mat4 obj2World_B = collider->Scale * collider->Rotation * collider->Translation;
+
+			// Kollision simulieren
+			CollisionInfo check = checkCollisionSAT(obj2World_A, obj2World_B);
+
+			// Falls gültig
+			if (check.isValid)
+			{
+				X_CalculateImpulse(*rb, *collider, check);
+			}
+		}
 
 		// Winkelgeschwindigkeit aktualisieren
 		rb->AngVel = inertiaTensorInv.transformVector(rb->AngMom);
-		
+
 		// Reset Torque und Force
 		rb->Force = Vec3(0.0f);
 		rb->Torque = Vec3(0.0f);

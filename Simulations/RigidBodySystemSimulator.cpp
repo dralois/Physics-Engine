@@ -11,39 +11,39 @@ const char * RigidBodySystemSimulator::getTestCasesStr()
 // Get Anzahl
 int RigidBodySystemSimulator::getNumberOfRigidBodies()
 {
-	return m_Ridigbodies.size();
+	return m_Rigidbodies.size();
 }
 
 // Get Position
 Vec3 RigidBodySystemSimulator::getPositionOfRigidBody(int i)
 {
 	Vec3 l_v3Position, l_v3Scale, l_v3Rotation, l_v3Shear;
-	m_Ridigbodies[i].Translation.decompose(l_v3Position, l_v3Scale, l_v3Rotation, l_v3Shear);
+	m_Rigidbodies[i].Translation.decompose(l_v3Position, l_v3Scale, l_v3Rotation, l_v3Shear);
 	return l_v3Position;
 }
 
 // Get Geschwindigkeit
 Vec3 RigidBodySystemSimulator::getLinearVelocityOfRigidBody(int i)
 {
-	return m_Ridigbodies[i].LinVel;
+	return m_Rigidbodies[i].LinVel;
 }
 
 // Get Winkelgeschwindigkeit
 Vec3 RigidBodySystemSimulator::getAngularVelocityOfRigidBody(int i)
 {
-	return m_Ridigbodies[i].AngVel;
+	return m_Rigidbodies[i].AngVel;
 }
 
 // Set Rotation
 void RigidBodySystemSimulator::setOrientationOf(int i, Quat orientation)
 {
-	m_Ridigbodies[i].Rotation = orientation.getRotMat();
+	m_Rigidbodies[i].Rotation = orientation.getRotMat();
 }
 
 // Set Geschwindigkeit
 void RigidBodySystemSimulator::setVelocityOf(int i, Vec3 velocity)
 {
-	m_Ridigbodies[i].LinVel = velocity;
+	m_Rigidbodies[i].LinVel = velocity;
 }
 
 #pragma endregion
@@ -77,26 +77,30 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 {
 	switch (demoNr)
 	{
-	case 0:
-		addRigidBody(Vec3(0.0f), Vec3(1, 0.6, 0.5), 2);
+	case 0:				// Demo 1
+		addRigidBody(Vec3(0.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
 		setOrientationOf(0, Quat::Quaternion(Vec3(0,0,1), (float)(M_PI)* 0.5f));
-		applyForceOnBody(0, Vec3(0.3, 0.5, 0.25), Vec3(1, 1, 0));
+		applyForceOnBody(0, Vec3(0.3f, 0.5f, 0.25f), Vec3(1.0f, 1.0f, 0.0f));
 		break;
-	case 1:
-		addRigidBody(Vec3(0.0f), Vec3(1, 0.6, 0.5), 2);
-		setOrientationOf(0, Quat::Quaternion(Vec3(0, 0, 1), (float)(M_PI)* 0.5f));
-		applyForceOnBody(0, Vec3(0.3, 0.5, 0.25), Vec3(1, 1, 0));
+	case 1:				// Demo 2
+		addRigidBody(Vec3(0.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
+		setOrientationOf(0, Quat::Quaternion(Vec3(0.0f, 0.0f, 1.0f), (float)(M_PI)* 0.5f));
+		applyForceOnBody(0, Vec3(0.3f, 0.5f, 0.25f), Vec3(1.0f, 1.0f, 0.0f));
 		break;
-	case 2:
-		addRigidBody(Vec3(0.0f), Vec3(1, 0.6, 0.5), 2);
-		applyForceOnBody(0, Vec3(0.0f), Vec3(10, 10, 10));
-		addRigidBody(Vec3(2.0f), Vec3(1, 0.6, 0.5), 2);
+	case 2:				// Demo 3
+		addRigidBody(Vec3(0.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
+		addRigidBody(Vec3(0.0f, 0.0f, 0.8f), Vec3(0.7f, 0.2f, 0.25f), 0.5f);
+		setOrientationOf(1, Quat::Quaternion(Vec3(1.0f, 1.0f, 1.0f), (float)(M_PI)* 0.2f));
 		break;
-	case 3:
-		addRigidBody(Vec3(0.0f), Vec3(1, 0.6, 0.5), 2);
-		addRigidBody(Vec3(1.0f), Vec3(1, 0.6, 0.5), 2);
-		addRigidBody(Vec3(2.0f), Vec3(1, 0.6, 0.5), 2);
-		addRigidBody(Vec3(3.0f), Vec3(1, 0.6, 0.5), 2);
+	case 3:				// Demo 3
+		addRigidBody(Vec3(0.8f, 0.0f, 0.8f), Vec3(0.8f, 0.2f, 0.5f), 2.0f);
+		setOrientationOf(0, Quat::Quaternion(Vec3(1.0f, 0.0f, 1.0f), (float)(M_PI)* 0.4f));
+		addRigidBody(Vec3(-0.8f, 0.0f, 0.8f), Vec3(1.2f, 0.1f, 0.25f), 0.5f);
+		setOrientationOf(1, Quat::Quaternion(Vec3(1.0f, -1.0f, 0.0f), (float)(M_PI)* 0.2f));
+		addRigidBody(Vec3(0.8f, 0.0f, -0.8f), Vec3(1.3f, 0.9f, 0.5f), 1.0f);
+		setOrientationOf(2, Quat::Quaternion(Vec3(0.0f, 1.0f, 1.0f), (float)(M_PI)* 0.7f));
+		addRigidBody(Vec3(-0.8f, 0.0f, -0.8f), Vec3(1.0f, 0.5f, 0.25f), 0.25f);
+		setOrientationOf(3, Quat::Quaternion(Vec3(1.0f, 1.0f, 1.0f), (float)(M_PI)* 0.4f));
 		break;
 	default:
 		break;
@@ -111,11 +115,11 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 	Vec3 trans, scale, rot, shear;
 	rb.Scale.decompose(trans, scale, rot, shear);
 	// 1/12 * m * (h^2 + d^2)
-	inertia.value[0][0] = 1.0f / 12 * rb.Mass * (powf(scale.y,2) + powf(scale.z,2));
+	inertia.value[0][0] = 1.0f / 12.0f * rb.Mass * (powf(scale.y,2) + powf(scale.z,2));
 	// 1/12 * m * (w^2 + d^2)
-	inertia.value[1][1] = 1.0f / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.z, 2));
+	inertia.value[1][1] = 1.0f / 12.0f * rb.Mass * (powf(scale.x, 2) + powf(scale.z, 2));
 	// 1/12 * m * (w^2 + h^2)
-	inertia.value[2][2] = 1.0f / 12 * rb.Mass * (powf(scale.x, 2) + powf(scale.y, 2));
+	inertia.value[2][2] = 1.0f / 12.0f * rb.Mass * (powf(scale.x, 2) + powf(scale.y, 2));
 	// vierte Dimension einfach auf 1 
 	inertia.value[3][3] = 1.0f;
 	// Speichere Inverses
@@ -193,8 +197,8 @@ void RigidBodySystemSimulator::reset()
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_v3ExternalForce = Vec3(0.0f);
-	m_fCollisionCoefficient = 1.0f;
-	m_Ridigbodies.clear();
+	m_fCollisionCoefficient = 0.8f;
+	m_Rigidbodies.clear();
 }
 
 // Rendere Simulation
@@ -209,7 +213,7 @@ void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCont
 	case 3:
 		DUC->setUpLighting(Vec3(), 0.4*Vec3(1, 1, 1), 100, 0.6*Vec3(0.97, 0.86, 1));
 		// Zeichnet alle Rigidbodies
-		for(auto rigidbody = m_Ridigbodies.begin(); rigidbody != m_Ridigbodies.end(); rigidbody++)
+		for(auto rigidbody = m_Rigidbodies.begin(); rigidbody != m_Rigidbodies.end(); rigidbody++)
 		{
 			Mat4 obj2World = rigidbody->Scale * rigidbody->Rotation * rigidbody->Translation;
 			DUC->drawRigidBody(obj2World);
@@ -252,16 +256,53 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	}
 }
 
-// Tut momentan nichts
+// Externe Kräfte berechnen, einfach kopiert aus MassSpringSystemSimulator
 void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-	return;
+	// Bei Demo 1 gibts Mauskraft nicht
+	if (m_iTestCase == 0)
+		return;
+
+	Point2D mouseDiff;
+	Vec3 mouseForce(0.0f);
+
+	// Berechne Differenz
+	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
+	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
+	// Falls linke Maustaste gedrückt
+	if (mouseDiff.x != 0 || mouseDiff.y != 0)
+	{
+		// Berechne benötigte Matrix
+		Mat4 worldViewInv = Mat4(DUC->g_camera.GetWorldMatrix() * DUC->g_camera.GetViewMatrix()).inverse();
+		// Vektor bestehend aus Mausverschiebung
+		Vec3 inputView = Vec3((float)-mouseDiff.x, (float)mouseDiff.y, 0);
+		// Bestimme Kraft im Worldspace mit Faktor
+		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.01f;
+	}
+	// Wende Gravitation und Mausinteraktion an
+	for (auto rb = m_Rigidbodies.begin(); rb != m_Rigidbodies.end(); rb++)
+	{
+		// Mauskraft einsetzen
+		rb->Force += mouseForce;
+		// rb->Force += m_v3ExternalForce;
+		
+		// angenommen, dass Mauskraft wird an einer beliebigen Ecke des Objekts wirken
+		float ranX = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
+		float ranY = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
+		float ranZ = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
+		Vec3 trans, scale, rot, shear;
+		rb->Scale.decompose(trans, scale, rot, shear);
+		Vec3 pos = Vec3(scale.x * ranX, scale.y * ranY, scale.z * ranZ);
+
+		rb->Torque += cross(pos, mouseForce);
+	}
 }
+
 
 // Simuliert Positions, Rotations usw. Update
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
-	for (auto rb = m_Ridigbodies.begin(); rb != m_Ridigbodies.end(); rb++)
+	for (auto rb = m_Rigidbodies.begin(); rb != m_Rigidbodies.end(); rb++)
 	{
 		// Geschwindigkeitsupdate und Positionsupdate
 		Mat4 transMat = rb->Translation;
@@ -290,7 +331,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Mat4 inertiaTensorInv = rotTransp * rb->InertiaTensorInv * rb->Rotation;
 		
 		// Kollisionscheck
-		for (auto collider = m_Ridigbodies.begin(); collider != m_Ridigbodies.end(); collider++)
+		for (auto collider = m_Rigidbodies.begin(); collider != m_Rigidbodies.end(); collider++)
 		{
 			// Kann nicht mit sich selbst kollidieren
 			if (collider == rb)
@@ -322,7 +363,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 // Wendet Kraft auf Rigidbody an
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
-	Rigidbody &collider = m_Ridigbodies[i];
+	Rigidbody &collider = m_Rigidbodies[i];
 	
 	// Die Kraftsposition und Kraftrichtung in local space umrechnen
 	// semi-local space
@@ -357,7 +398,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass
 	toAdd.AngMom = Vec3(0.0f);
 	X_CalculateInertiaTensor(toAdd);
 	// Zum Array hinzufügen
-	m_Ridigbodies.push_back(toAdd);
+	m_Rigidbodies.push_back(toAdd);
 }
 
 #pragma endregion
@@ -367,6 +408,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass
 // Initialisiert neuen Simulator
 RigidBodySystemSimulator::RigidBodySystemSimulator()
 {
+	srand(time(NULL));
 	m_iTestCase = 0;
 	reset();
 }

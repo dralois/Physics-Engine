@@ -53,10 +53,10 @@ public:
 private:
 	// Data Attributes
 	Vec3							m_v3ExternalForce;
-	float							m_fCollisionCoefficient;
+	float						m_fCollisionCoefficient;
 
 	// Simulation Data
-	vector<Rigidbody>	m_Ridigbodies;
+	vector<Rigidbody>	m_Rigidbodies;
 
 	// UI Attributes
 	Point2D						m_v2Oldtrackmouse;

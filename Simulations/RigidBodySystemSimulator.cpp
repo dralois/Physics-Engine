@@ -200,6 +200,7 @@ void RigidBodySystemSimulator::reset()
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_v3ExternalForce = Vec3(0.0f);
 	m_fCollisionCoefficient = 0.8f;
+	m_HasPrinted = false;
 	m_Rigidbodies.clear();
 }
 
@@ -306,6 +307,14 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 // Simuliert Positions-, Rotations- usw. Update
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
+	// Bei Testcase 1 abbrechen nach dem Print
+	if (m_HasPrinted)
+		return;
+
+	// Timestep überschreiben für Testcase 1
+	if(m_iTestCase == 0)
+		timeStep = 2.0f;
+
 	for (auto rb = m_Rigidbodies.begin(); rb != m_Rigidbodies.end(); rb++)
 	{
 		// Kollisionscheck
@@ -359,6 +368,14 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 
 		// Winkelgeschwindigkeit aktualisieren
 		rb->AngVel = inertiaTensorInv * rb->AngMom;
+
+		// Ergebnis printen
+		if(m_iTestCase == 0 && !m_HasPrinted)
+		{
+			m_HasPrinted = true;
+			cout << rb->LinVel << " " << rb->AngVel << " " << endl;
+			cout << rb->LinVel + cross(rb->AngVel, Vec3(0.3, 0.5, 0.25)) << endl;
+		}
 
 		// Reset Torque und Force
 		rb->Force = Vec3(0.0f);

@@ -47,8 +47,9 @@ public:
 
 private:
 	// Data Attributes
+	bool							m_HasPrinted;
 	Vec3							m_v3ExternalForce;
-	float						m_fCollisionCoefficient;
+	float							m_fCollisionCoefficient;
 
 	// Simulation Data
 	vector<Rigidbody>	m_Rigidbodies;

@@ -205,7 +205,6 @@ void RigidBodySystemSimulator::reset()
 }
 
 // Rendere Simulation
-// TODO: Selbst wenn man die Kamera dreht sieht man immer das Gleiche
 void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 {
 	switch (m_iTestCase)
@@ -218,7 +217,8 @@ void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCont
 		// Zeichnet alle Rigidbodies
 		for(auto rigidbody = m_Rigidbodies.begin(); rigidbody != m_Rigidbodies.end(); rigidbody++)
 		{
-			Mat4 obj2World = rigidbody->Scale * rigidbody->Rotation * rigidbody->Translation * DUC->g_camera.GetWorldMatrix();
+			Mat4 obj2World = rigidbody->Scale * rigidbody->Rotation *
+				rigidbody->Translation * DUC->g_camera.GetWorldMatrix();
 			DUC->drawRigidBody(obj2World);
 		}
 		break;

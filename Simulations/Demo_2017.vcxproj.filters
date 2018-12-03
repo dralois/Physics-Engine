@@ -13,6 +13,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="RigidBodySystemSimulator.cpp" />
+    <ClCompile Include="pch.cpp">
+      <Filter>Precompile</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MassSpringSystemSimulator.h" />
@@ -40,10 +43,18 @@
     <ClInclude Include="util\vector4d.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="collisionDetect.h" />
+    <ClInclude Include="RigidBodySystemSimulator.h" />
+    <ClInclude Include="pch.h">
+      <Filter>Precompile</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Utils">
       <UniqueIdentifier>{9a3cfc32-de51-44b6-9710-34e74777ef21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Precompile">
+      <UniqueIdentifier>{8a31db54-373d-475e-82c0-527ac448615b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

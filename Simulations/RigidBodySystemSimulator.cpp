@@ -1,4 +1,6 @@
-﻿#include "RigidBodySystemSimulator.h"
+﻿#include "pch.h"
+
+#include "RigidBodySystemSimulator.h"
 
 #pragma region Properties
 

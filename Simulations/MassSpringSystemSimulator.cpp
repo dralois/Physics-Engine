@@ -1,4 +1,6 @@
-﻿#include "MassSpringSystemSimulator.h"
+﻿#include "pch.h"
+
+#include "MassSpringSystemSimulator.h"
 
 #pragma region Properties
 

@@ -1,12 +1,7 @@
 ﻿#ifndef RIGIDBODYSYSTEMSIMULATOR_h
 #define RIGIDBODYSYSTEMSIMULATOR_h
 
-#include "Simulator.h"
-#include "util/quaternion.h"
-#include "util/matrixbase.h"
-#include "collisionDetect.h"
-#include <algorithm>
-#include <vector>
+#include "pch.h"
 
 #define TESTCASEUSEDTORUNTEST 2
 

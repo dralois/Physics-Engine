@@ -1,19 +1,6 @@
-#include <sstream>
-#include <iomanip>
-#include <random>
 #define _USE_MATH_DEFINES
-#include <cmath>
-#include <iostream>
-// DrawingUtilitiesClass
-#include "DrawingUtilitiesClass.h"
-// Simulator
-#include "Simulator.h"
-// DirectX includes
-#include <DirectXMath.h>
-#include "util/vectorbase.h"
-// Internal includes
-#include "util/util.h"
-#include "util/FFmpeg.h"
+
+#include "pch.h"
 
 using namespace DirectX;
 using namespace GamePhysics;

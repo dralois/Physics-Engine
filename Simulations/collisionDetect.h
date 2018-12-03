@@ -378,13 +378,21 @@ namespace collisionTools{
 					   bestSingleAxis);
 		}break;
 		}
-
-
-		info.isValid = true;
-		info.collisionPointWorld = collisionPoint;
-		info.depth = smallOverlap;
-		info.normalWorld = normal*-1;
-		return info;
+		// Fix für unbehandelter Fehler
+		if (fromWhere == -1) {
+			info.isValid = false;
+			info.collisionPointWorld = Vec3(0.0f);
+			info.depth = 0.0f;
+			info.normalWorld = Vec3(0.0f);
+			return info;
+		}
+		else {
+			info.isValid = true;
+			info.collisionPointWorld = collisionPoint;
+			info.depth = smallOverlap;
+			info.normalWorld = normal*-1;
+			return info;
+		}
 	}
 }
 

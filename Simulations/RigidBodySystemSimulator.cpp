@@ -91,8 +91,8 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 		break;
 	case 2:				// Demo 3
 		addRigidBody(Vec3(0.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
-		addRigidBody(Vec3(0.0f, 0.0f, 0.8f), Vec3(0.7f, 0.2f, 0.25f), 0.5f);
-		setOrientationOf(1, Quat::Quaternion(Vec3(1.0f, 1.0f, 1.0f), (float)(M_PI)* 0.2f));
+		addRigidBody(Vec3(2.0f, 0.0f, 0.4f), Vec3(1.0f, 0.6f, 0.5f), 0.5f);
+		applyForceOnBody(0, Vec3(0.0f), Vec3(5.0f, 0.0f, 0.0f));
 		break;
 	case 3:				// Demo 3
 		addRigidBody(Vec3(0.8f, 0.0f, 0.8f), Vec3(0.8f, 0.2f, 0.5f), 2.0f);
@@ -306,6 +306,27 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
 	for (auto rb = m_Rigidbodies.begin(); rb != m_Rigidbodies.end(); rb++)
 	{
+		// Kollisionscheck
+		for (auto collider = m_Rigidbodies.begin(); collider != m_Rigidbodies.end(); collider++)
+		{
+			// Kann nicht mit sich selbst kollidieren
+			if (collider == rb)
+				continue;
+
+			// Erstelle Matrizen
+			Mat4 obj2World_A = rb->Scale * rb->Rotation * rb->Translation;
+			Mat4 obj2World_B = collider->Scale * collider->Rotation * collider->Translation;
+
+			// Kollision simulieren
+			CollisionInfo check = checkCollisionSAT(obj2World_A, obj2World_B);
+
+			// Falls gültig
+			if (check.isValid)
+			{
+				X_CalculateImpulse(*rb, *collider, check);
+			}
+		}
+
 		// Geschwindigkeitsupdate und Positionsupdate
 		Mat4 transMat = rb->Translation;
 		Vec3 trans, scale, rot, shear;
@@ -331,27 +352,6 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Mat4 rotTransp = rb->Rotation;
 		rotTransp.transpose();
 		Mat4 inertiaTensorInv = rotTransp * rb->InertiaTensorInv * rb->Rotation;
-		
-		// Kollisionscheck
-		for (auto collider = m_Rigidbodies.begin(); collider != m_Rigidbodies.end(); collider++)
-		{
-			// Kann nicht mit sich selbst kollidieren
-			if (collider == rb)
-				continue;
-
-			// Erstelle Matrizen
-			Mat4 obj2World_A = rb->Scale * rb->Rotation * rb->Translation;
-			Mat4 obj2World_B = collider->Scale * collider->Rotation * collider->Translation;
-
-			// Kollision simulieren
-			CollisionInfo check = checkCollisionSAT(obj2World_A, obj2World_B);
-
-			// Falls gültig
-			if (check.isValid)
-			{
-				X_CalculateImpulse(*rb, *collider, check);
-			}
-		}
 
 		// Winkelgeschwindigkeit aktualisieren
 		rb->AngVel = inertiaTensorInv.transformVector(rb->AngMom);

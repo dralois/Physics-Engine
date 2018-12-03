@@ -60,6 +60,7 @@ private:
 
 	// Functions
 	void X_SetupDemo(int demoNr);
+	void X_ApplyForceOnBody(Rigidbody & rb, Vec3 loc, Vec3 force);
 	void X_CalculateInertiaTensor(Rigidbody & rb);
 	void X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & rb_B, CollisionInfo & coll);
 };

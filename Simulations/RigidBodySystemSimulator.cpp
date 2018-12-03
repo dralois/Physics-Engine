@@ -91,18 +91,18 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 		break;
 	case 2:				// Demo 3
 		addRigidBody(Vec3(0.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
-		addRigidBody(Vec3(0.5f, 0.0f, 1.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
-		applyForceOnBody(0, Vec3(0.0f), Vec3(0.0f, 0.0f, 1.0f));
-		applyForceOnBody(1, Vec3(0.0f), Vec3(0.0f, 0.0f, -1.0f));
+		addRigidBody(Vec3(0.75f, 0.0f, 1.0f), Vec3(1.0f, 0.6f, 0.5f), 1.0f);
+		applyForceOnBody(0, Vec3(0.0f), Vec3(0.0f, 0.0f, 5.0f));
+		applyForceOnBody(1, Vec3(0.75f, 0.0f, 1.0f), Vec3(0.0f, 0.0f, -5.0f));
 		break;
-	case 3:				// Demo 3
-		addRigidBody(Vec3(0.8f, 0.0f, 0.8f), Vec3(0.8f, 0.2f, 0.5f), 2.0f);
+	case 3:				// Demo 4
+		addRigidBody(Vec3(0.0f, 0.0f, 0.5f), Vec3(0.8f, 0.2f, 0.5f), 1.0f);
 		setOrientationOf(0, Quat::Quaternion(Vec3(1.0f, 0.0f, 1.0f), (float)(M_PI)* 0.4f));
-		addRigidBody(Vec3(-0.8f, 0.0f, 0.8f), Vec3(1.2f, 0.1f, 0.25f), 0.5f);
+		addRigidBody(Vec3(-0.4f, 0.0f, 0.8f), Vec3(1.2f, 0.1f, 0.25f), 1.0f);
 		setOrientationOf(1, Quat::Quaternion(Vec3(1.0f, -1.0f, 0.0f), (float)(M_PI)* 0.2f));
 		addRigidBody(Vec3(0.8f, 0.0f, -0.8f), Vec3(1.3f, 0.9f, 0.5f), 1.0f);
 		setOrientationOf(2, Quat::Quaternion(Vec3(0.0f, 1.0f, 1.0f), (float)(M_PI)* 0.7f));
-		addRigidBody(Vec3(-0.8f, 0.0f, -0.8f), Vec3(1.0f, 0.5f, 0.25f), 0.25f);
+		addRigidBody(Vec3(-0.4f, 0.0f, -0.8f), Vec3(1.0f, 0.5f, 0.25f), 1.0f);
 		setOrientationOf(3, Quat::Quaternion(Vec3(1.0f, 1.0f, 1.0f), (float)(M_PI)* 0.4f));
 		break;
 	default:
@@ -123,7 +123,7 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 	inertia.value[1][1] = 1.0f / 12.0f * rb.Mass * (powf(scale.x, 2) + powf(scale.z, 2));
 	// 1/12 * m * (w^2 + h^2)
 	inertia.value[2][2] = 1.0f / 12.0f * rb.Mass * (powf(scale.x, 2) + powf(scale.y, 2));
-	// vierte Dimension einfach auf 1 
+	// Wird benötigt damit man damit rechnen kann
 	inertia.value[3][3] = 1.0f;
 	// Speichere Inverses
 	rb.InertiaTensorInv = inertia.inverse();
@@ -132,17 +132,13 @@ void RigidBodySystemSimulator::X_CalculateInertiaTensor(Rigidbody & rb)
 // Berechnet Impuls
 void RigidBodySystemSimulator::X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & rb_B, CollisionInfo & coll)
 {
-	// Nur damit beschäftigen, wenn es wirklich eine Kollision gibt
-	if (!coll.isValid)
-		return;
-
 	// Velocity und local Position von A
 	Vec3 transA, scaleA, rotA, shearA;
 	rb_A.Translation.decompose(transA, scaleA, rotA, shearA);
 	Vec3 xa = coll.collisionPointWorld - transA;
 	Vec3 va = rb_A.LinVel + cross(rb_A.AngVel, xa);
 
-	// Velocity local Position von B
+	// Velocity und local Position von B
 	Vec3 transB, scaleB, rotB, shearB;
 	rb_B.Translation.decompose(transB, scaleB, rotB, shearB);
 	Vec3 xb = coll.collisionPointWorld - transB;
@@ -150,6 +146,10 @@ void RigidBodySystemSimulator::X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & 
 
 	// Relative Geschwindigkeit
 	Vec3 rVel = va - vb;
+
+	// Bei Separierung abbrechen
+	if (dot(rVel, coll.normalWorld) > 0)
+		return;
 
 	// (Ia.inverse * (Xa cross n)) cross Xa
 	Mat4 rotTranspA = rb_A.Rotation;
@@ -170,9 +170,8 @@ void RigidBodySystemSimulator::X_CalculateImpulse(Rigidbody & rb_A, Rigidbody & 
 	// Anwenden
 	rb_A.LinVel += J * coll.normalWorld / rb_A.Mass;
 	rb_B.LinVel -= J * coll.normalWorld / rb_B.Mass;
-
-	rb_A.AngMom += cross(xa, J * coll.normalWorld);
-	rb_B.AngMom -= cross(xb, J * coll.normalWorld);
+	rb_A.AngMom -= cross(xa, J * coll.normalWorld);
+	rb_B.AngMom += cross(xb, J * coll.normalWorld);
 }
 
 #pragma endregion
@@ -267,8 +266,8 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 // Externe Kräfte berechnen, einfach kopiert aus MassSpringSystemSimulator
 void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-	// Bei Demo 1 gibts Mauskraft nicht
-	if (m_iTestCase == 0)
+	// Bei Demo 1 und 3 keine Interaktion
+	if (m_iTestCase == 0 || m_iTestCase == 2)
 		return;
 
 	Point2D mouseDiff;
@@ -287,26 +286,24 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 		// Bestimme Kraft im Worldspace mit Faktor
 		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.01f;
 	}
-	// Wende Gravitation und Mausinteraktion an
+
+	// Wende Mausinteraktion an
 	for (auto rb = m_Rigidbodies.begin(); rb != m_Rigidbodies.end(); rb++)
 	{
-		// Mauskraft einsetzen
-		rb->Force += mouseForce;
-
-		// angenommen, dass Mauskraft wird an einer beliebigen Ecke des Objekts wirken
+		// Zufällige X/Y/Z Werte bestimmen -> Zufällige Ecke
 		float ranX = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
 		float ranY = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
 		float ranZ = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
 		Vec3 trans, scale, rot, shear;
 		rb->Scale.decompose(trans, scale, rot, shear);
 		Vec3 pos = Vec3(scale.x * ranX, scale.y * ranY, scale.z * ranZ);
-
-		rb->Torque += cross(pos, mouseForce);
+		rb->Translation.decompose(trans, scale, rot, shear);
+		// Kraft anwenden
+		X_ApplyForceOnBody(*rb, pos + trans, mouseForce * 1.0f / rb->Mass);
 	}
 }
 
-
-// Simuliert Positions, Rotations usw. Update
+// Simuliert Positions-, Rotations- usw. Update
 void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 {
 	for (auto rb = m_Rigidbodies.begin(); rb != m_Rigidbodies.end(); rb++)
@@ -332,23 +329,25 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 			}
 		}
 
-		// Geschwindigkeitsupdate und Positionsupdate
+		// Geschwindigkeit- und Positionsupdate
 		Mat4 transMat = rb->Translation;
 		Vec3 trans, scale, rot, shear;
 		transMat.decompose(trans, scale, rot, shear);
 		trans += timeStep * rb->LinVel;
 		transMat.initTranslation(trans.x, trans.y, trans.z);
 		rb->Translation = transMat;
-		rb->LinVel += timeStep * (rb->Force / (rb->Mass * 1.0f));
+		rb->LinVel += timeStep * (rb->Force / rb->Mass);
 
 		// Rotationsmatrix zu Quaternion
-		Quat oldRot = Quat(rb->Rotation);
+		Quat oldRot = Quat(rb->Rotation).unit();
 
 		// Euler Step: Neue Rotation mit alter Winkelgeschwindigkeit berechnen
-		Quat newRot = (oldRot + (Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot) * (timeStep / 2.0f)).unit();
+		Quat newRot = oldRot + (Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot) * (timeStep / 2.0f);
 
 		// Rotation aktualisieren
-		rb->Rotation = newRot.getRotMat();
+		rb->Rotation = newRot.unit().getRotMat();
+		// Transponieren weil Lefthanded (!!)
+		rb->Rotation.transpose();
 
 		// Drehimpuls updaten
 		rb->AngMom += timeStep * rb->Torque;
@@ -359,7 +358,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Mat4 inertiaTensorInv = rotTransp * rb->InertiaTensorInv * rb->Rotation;
 
 		// Winkelgeschwindigkeit aktualisieren
-		rb->AngVel = inertiaTensorInv.transformVector(rb->AngMom);
+		rb->AngVel = inertiaTensorInv * rb->AngMom;
 
 		// Reset Torque und Force
 		rb->Force = Vec3(0.0f);
@@ -370,11 +369,19 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 // Wendet Kraft auf Rigidbody an
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
-	// Aktuellen RB holen
-	Rigidbody & curr = m_Rigidbodies[i];
-	// Torque & Force aktualisieren (alles in Worldspace)
-	curr.Torque += cross(loc, force);
-	curr.Force += force;
+	X_ApplyForceOnBody(m_Rigidbodies[i], loc, force);
+}
+
+// Wendet Kraft auf Rigidbody an
+void RigidBodySystemSimulator::X_ApplyForceOnBody(Rigidbody & rb, Vec3 loc, Vec3 force)
+{
+	// Translation holen
+	Vec3 trans, scale, rot, shear;
+	rb.Translation.decompose(trans, scale, rot, shear);
+
+	// Torque & Force aktualisieren
+	rb.Torque += cross(loc - trans, force);
+	rb.Force += force;
 }
 
 // Fügt neuen Rigidbody hinzu
@@ -385,6 +392,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass
 	trans.initTranslation(position.x, position.y, position.z);
 	scale.initScaling(size.x, size.y, size.z);
 	rot.initRotationXYZ(0, 0, 0);
+
 	// Rigidbody aufbauen
 	Rigidbody toAdd;
 	toAdd.Translation = trans;
@@ -397,6 +405,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass
 	toAdd.Torque = Vec3(0.0f);
 	toAdd.AngMom = Vec3(0.0f);
 	X_CalculateInertiaTensor(toAdd);
+
 	// Zum Array hinzufügen
 	m_Rigidbodies.push_back(toAdd);
 }

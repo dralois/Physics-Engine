@@ -12,6 +12,7 @@ namespace SimulatorTester
 			rbss->m_iTestCase = TESTCASEUSEDTORUNTEST;
 			rbss->addRigidBody(Vec3(-0.1f, -0.2f, 0.1f), Vec3(0.4f, 0.2f, 0.2f), 100.0f);
 			rbss->addRigidBody(Vec3(0.0f, 0.2f, 0.0f), Vec3(0.4f, 0.2f, 0.2f), 100.0);
+			rbss->setOrientationOf(0, Quat(0, 0, 0, 1));
 			rbss->setOrientationOf(1, Quat(Vec3(0.0f, 0.0f, 1.0f), (float)(M_PI)*0.25f));
 			rbss->setVelocityOf(1,Vec3(0.0f, -0.1f, 0.05f));
 		}

@@ -39,7 +39,7 @@ Vec3 RigidBodySystemSimulator::getAngularVelocityOfRigidBody(int i)
 // Set Rotation
 void RigidBodySystemSimulator::setOrientationOf(int i, Quat orientation)
 {
-	m_Rigidbodies[i].Rotation = orientation.getRotMat();
+	m_Rigidbodies[i].Rotation = orientation.unit().getRotMat();
 }
 
 // Set Geschwindigkeit
@@ -91,8 +91,9 @@ void RigidBodySystemSimulator::X_SetupDemo(int demoNr)
 		break;
 	case 2:				// Demo 3
 		addRigidBody(Vec3(0.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
-		addRigidBody(Vec3(2.0f, 0.0f, 0.4f), Vec3(1.0f, 0.6f, 0.5f), 0.5f);
-		applyForceOnBody(0, Vec3(0.0f), Vec3(5.0f, 0.0f, 0.0f));
+		addRigidBody(Vec3(0.5f, 0.0f, 1.0f), Vec3(1.0f, 0.6f, 0.5f), 2.0f);
+		applyForceOnBody(0, Vec3(0.0f), Vec3(0.0f, 0.0f, 1.0f));
+		applyForceOnBody(1, Vec3(0.0f), Vec3(0.0f, 0.0f, -1.0f));
 		break;
 	case 3:				// Demo 3
 		addRigidBody(Vec3(0.8f, 0.0f, 0.8f), Vec3(0.8f, 0.2f, 0.5f), 2.0f);
@@ -217,7 +218,7 @@ void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCont
 		// Zeichnet alle Rigidbodies
 		for(auto rigidbody = m_Rigidbodies.begin(); rigidbody != m_Rigidbodies.end(); rigidbody++)
 		{
-			Mat4 obj2World = rigidbody->Scale * rigidbody->Rotation * rigidbody->Translation;
+			Mat4 obj2World = rigidbody->Scale * rigidbody->Rotation * rigidbody->Translation * DUC->g_camera.GetWorldMatrix();
 			DUC->drawRigidBody(obj2World);
 		}
 		break;
@@ -250,6 +251,11 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	case 2:
 	{
 		cout << "Demo 3!" << endl;
+		break;
+	}
+	case 3:
+	{
+		cout << "Demo 4!" << endl;
 		break;
 	}
 	default:
@@ -286,8 +292,7 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 	{
 		// Mauskraft einsetzen
 		rb->Force += mouseForce;
-		// rb->Force += m_v3ExternalForce;
-		
+
 		// angenommen, dass Mauskraft wird an einer beliebigen Ecke des Objekts wirken
 		float ranX = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
 		float ranY = rand() > RAND_MAX / 2 ? 1.0f : -1.0f;
@@ -340,7 +345,7 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Quat oldRot = Quat(rb->Rotation);
 
 		// Euler Step: Neue Rotation mit alter Winkelgeschwindigkeit berechnen
-		Quat newRot = oldRot + (Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot) * (timeStep / 2.0f);
+		Quat newRot = (oldRot + (Quat(rb->AngVel.x, rb->AngVel.y, rb->AngVel.z, 0.0f) * oldRot) * (timeStep / 2.0f)).unit();
 
 		// Rotation aktualisieren
 		rb->Rotation = newRot.getRotMat();
@@ -365,18 +370,11 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 // Wendet Kraft auf Rigidbody an
 void RigidBodySystemSimulator::applyForceOnBody(int i, Vec3 loc, Vec3 force)
 {
-	Rigidbody &collider = m_Rigidbodies[i];
-	
-	// Die Kraftsposition und Kraftrichtung in local space umrechnen
-	// semi-local space
-	Mat4 transMat = collider.Translation;
-	Vec3 trans, scale, rot, shear;
-	transMat.decompose(trans, scale, rot, shear);
-	Vec3 v3PosLocal = loc - trans;
-
-	// Torque & Force aktualisieren
-	collider.Torque += cross(v3PosLocal, force);
-	collider.Force += force;
+	// Aktuellen RB holen
+	Rigidbody & curr = m_Rigidbodies[i];
+	// Torque & Force aktualisieren (alles in Worldspace)
+	curr.Torque += cross(loc, force);
+	curr.Force += force;
 }
 
 // Fügt neuen Rigidbody hinzu

@@ -9,8 +9,8 @@ using namespace GamePhysics;
 
 //#define TEMPLATE_DEMO
 //#define MASS_SPRING_SYSTEM
-#define RIGID_BODY_SYSTEM
-//#define SPH_SYSTEM
+//#define RIGID_BODY_SYSTEM
+#define SPHERE_SYSTEM 
 
 #ifdef TEMPLATE_DEMO
 #include "TemplateSimulator.h"
@@ -21,8 +21,8 @@ using namespace GamePhysics;
 #ifdef RIGID_BODY_SYSTEM
 #include "RigidBodySystemSimulator.h"
 #endif
-#ifdef SPH_SYSTEM
-//#include "SPHSystemSimulator.h"
+#ifdef SPHERE_SYSTEM
+#include "SphereSystemSimulator.h"
 #endif
 
 DrawingUtilitiesClass * g_pDUC;
@@ -357,8 +357,8 @@ int main(int argc, char* argv[])
 #ifdef RIGID_BODY_SYSTEM
 	g_pSimulator= new RigidBodySystemSimulator();
 #endif
-#ifdef SPH_SYSTEM
-	//g_pSimulator= new SPHSystemSimulator();
+#ifdef SPHERE_SYSTEM
+	g_pSimulator = new SphereSystemSimulator();
 #endif
 	g_pSimulator->reset();
 

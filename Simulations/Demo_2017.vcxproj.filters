@@ -16,6 +16,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>Precompile</Filter>
     </ClCompile>
+    <ClCompile Include="SphereSystemSimulator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MassSpringSystemSimulator.h" />
@@ -48,6 +49,7 @@
     <ClInclude Include="pch.h">
       <Filter>Precompile</Filter>
     </ClInclude>
+    <ClInclude Include="SphereSystemSimulator.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Utils">

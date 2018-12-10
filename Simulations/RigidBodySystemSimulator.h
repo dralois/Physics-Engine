@@ -35,7 +35,7 @@ public:
 	void onClick(int x, int y);
 	void onMouse(int x, int y);
 
-	// ExtraFunctions
+	// Extra functions
 	int getNumberOfRigidBodies();
 	Vec3 getPositionOfRigidBody(int i);
 	Vec3 getLinearVelocityOfRigidBody(int i);

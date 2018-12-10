@@ -264,7 +264,7 @@ void RigidBodySystemSimulator::notifyCaseChanged(int testCase)
 	}
 }
 
-// Externe Kräfte berechnen, einfach kopiert aus MassSpringSystemSimulator
+// Externe Kräfte berechnen
 void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 {
 	// Bei Demo 1 und 3 keine Interaktion

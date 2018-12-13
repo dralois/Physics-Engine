@@ -373,8 +373,8 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		if(m_iTestCase == 0 && !m_HasPrinted)
 		{
 			m_HasPrinted = true;
-			cout << rb->LinVel << " " << rb->AngVel << " " << endl;
-			cout << rb->LinVel + cross(rb->AngVel, Vec3(0.3, 0.5, 0.25)) << endl;
+			cout << "Lin Vel: " << rb->LinVel << " Ang Vel: " << rb->AngVel << endl;
+			cout << "Point (0.3/0.5/0.25): " << rb->LinVel + cross(rb->AngVel, Vec3(0.3, 0.5, 0.25)) << endl;
 		}
 
 		// Reset Torque und Force

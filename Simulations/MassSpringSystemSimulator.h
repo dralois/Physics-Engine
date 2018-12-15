@@ -29,7 +29,11 @@ struct Spring
 	float CurrentLength;
 	// Standartkonstruktor
 	Spring::Spring(Masspoint &ref1, Masspoint &ref2) :
-		Point1(ref1), Point2(ref2) {}
+		Point1(ref1),
+		Point2(ref2),
+		Stiffness(0),
+		InitLenght(0),
+		CurrentLength(0) {}
 };
 
 class MassSpringSystemSimulator:public Simulator{

@@ -8,6 +8,17 @@
 #define NAIVEACC 0
 #define GRIDACC 1
 
+struct Ball
+{
+	Vec3 Position;
+	Vec3 PositionTilde;
+	Vec3 Velocity;
+	Vec3 Force;
+	Vec3 ForceTilde;
+	float Mass;
+	float Radius;
+};
+
 class SphereSystemSimulator:public Simulator{
 public:
 	// Construtors
@@ -32,9 +43,9 @@ protected:
 	float		m_fRadius;
 	float		m_fMass;
 	// UI Attributes
-	Point2D						m_v2Oldtrackmouse;
-	Point2D						m_v2Trackmouse;
-	Point2D						m_v2Mouse;
+	Point2D	m_v2Oldtrackmouse;
+	Point2D	m_v2Trackmouse;
+	Point2D	m_v2Mouse;
 
 	int			m_iKernel; // index of the m_Kernels[5], more detials in SphereSystemSimulator.cpp
 	static	std::function<float(float)> m_Kernels[5];

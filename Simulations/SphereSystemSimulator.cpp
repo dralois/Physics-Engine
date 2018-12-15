@@ -45,10 +45,30 @@ std::function<float(float)> SphereSystemSimulator::m_Kernels[5] = {
 	[](float x) {return 1.0f / (x*x) - 1.0f; },		// Electric Charge, m_iKernel = 4
 };
 
+// Erstellt Szene je nach Demo
+// TODO Demo 3
+void SphereSystemSimulator::X_SetupDemo()
+{
+	// Je nach Case
+	switch(m_iTestCase)
+	{
+		case 0:
+			m_pSphereSystem = new SphereSystem(NAIVEACC, m_iNumSpheres, m_fRadius, m_fMass);
+			break;
+		case 1:
+			m_pSphereSystem = new SphereSystem(GRIDACC, m_iNumSpheres, m_fRadius, m_fMass);
+			break;
+		case 2:
+			break;
+		default:
+			break;
+	}
+}
+
 #pragma endregion
 
 // Initialisiere UI je nach Demo
-// TODO
+// TODO Demo 1,2,3
 void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 {
 	this->DUC = DUC;
@@ -64,18 +84,22 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 }
 
 // Setzte Simulation zurück
-// TODO
 void SphereSystemSimulator::reset()
 {
-	m_fForceScaling = m_fDamping = m_fRadius = m_fMass = 0.0f;
+	m_fForceScaling = 0.0f;
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_v3ExternalForce = Vec3(0.0f);
-	m_iNumSpheres = 0;
+	m_fMass = m_fRadius = 1.0f;
+	// Ballsystem löschen
+	if(m_pSphereSystem)
+		delete m_pSphereSystem;
+	if (m_pSphereSystemGrid)
+		delete m_pSphereSystemGrid;
 }
 
 // Rendere Simulation
-// TODO
+// TODO Demo 3
 void SphereSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 {
 	switch (m_iTestCase)
@@ -84,7 +108,7 @@ void SphereSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext
 	case 1:
 	case 2:
 	case 3:
-		DUC->setUpLighting(Vec3(), 0.4*Vec3(1, 1, 1), 100, 0.6*Vec3(0.97, 0.86, 1));
+		m_pSphereSystem->drawFrame(DUC, Vec3(1.0f, 0.0f, 0.0f));
 		break;
 	default:
 		break;
@@ -92,12 +116,13 @@ void SphereSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext
 }
 
 // Aktiviere verschiedene Simulationen
-// TODO
 void SphereSystemSimulator::notifyCaseChanged(int testCase)
 {
 	m_iTestCase = testCase;
 	// Setzte Simulation zurück
 	reset();
+	// Erstelle Szene
+	X_SetupDemo();
 	// Je nach Case
 	switch (m_iTestCase)
 	{
@@ -123,17 +148,18 @@ void SphereSystemSimulator::notifyCaseChanged(int testCase)
 }
 
 // Externe Kräfte updaten
-// TODO
+// TODO Demo 1,2,3
 void SphereSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-
+	m_pSphereSystem->externalForcesCalculations(timeElapsed, Vec3(0.0f));
 }
 
 // Simulation updaten
-// TODO
+// TODO Demo 3
 void SphereSystemSimulator::simulateTimestep(float timeStep)
 {
-
+	m_pSphereSystem->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
+	m_pSphereSystem->simulateTimestep(timeStep);
 }
 
 #pragma endregion
@@ -141,11 +167,22 @@ void SphereSystemSimulator::simulateTimestep(float timeStep)
 #pragma region Initialisation
 
 // Initialisiert neuen Simulator
-SphereSystemSimulator::SphereSystemSimulator()
+SphereSystemSimulator::SphereSystemSimulator() :
+	m_pSphereSystem(NULL),
+	m_pSphereSystemGrid(NULL)
 {
 	srand(time(NULL));
 	m_iTestCase = 0;
 	reset();
+}
+
+// Aufräumen
+SphereSystemSimulator::~SphereSystemSimulator()
+{
+	if(m_pSphereSystem)
+		delete m_pSphereSystem;
+	if (m_pSphereSystemGrid)
+		delete m_pSphereSystemGrid;
 }
 
 #pragma endregion

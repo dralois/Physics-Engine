@@ -46,7 +46,6 @@ std::function<float(float)> SphereSystemSimulator::m_Kernels[5] = {
 };
 
 // Erstellt Szene je nach Demo
-// TODO Demo 3
 void SphereSystemSimulator::X_SetupDemo()
 {
 	// Je nach Case
@@ -59,6 +58,8 @@ void SphereSystemSimulator::X_SetupDemo()
 			m_pSphereSystem = new SphereSystem(GRIDACC, m_iNumSpheres, m_fRadius, m_fMass);
 			break;
 		case 2:
+			m_pSphereSystem = new SphereSystem(NAIVEACC, m_iNumSpheres, m_fRadius, m_fMass);
+			m_pSphereSystemGrid = new SphereSystem(GRIDACC, m_iNumSpheres, m_fRadius, m_fMass);
 			break;
 		default:
 			break;

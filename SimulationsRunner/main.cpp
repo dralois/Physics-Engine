@@ -347,7 +347,6 @@ int main(int argc, char* argv[])
 	g_pDUC->g_camera.SetViewParams(XMLoadFloat3(&eye), XMLoadFloat3(&lookAt));
 	g_pDUC->g_camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_RIGHT_BUTTON);
 
-
 #ifdef TEMPLATE_DEMO
 	g_pSimulator = new TemplateSimulator();
 #endif
@@ -371,6 +370,8 @@ int main(int argc, char* argv[])
 
 	DXUTMainLoop(); // Enter into the DXUT render loop
 	DXUTShutdown(); // Shuts down DXUT (includes calls to OnD3D11ReleasingSwapChain() and OnD3D11DestroyDevice())
+
+	delete g_pSimulator;
 
 	return DXUTGetExitCode();
 }

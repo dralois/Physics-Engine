@@ -18,6 +18,10 @@ using namespace GamePhysics;
 
 class Simulator{
 public:
+
+	// Destructor
+	virtual ~Simulator() {};
+	
 	// Attributes
 	
 	int m_iTestCase;
@@ -28,7 +32,7 @@ public:
 	virtual const char * getTestCasesStr() = 0;
 
 	virtual void reset() = 0;
-	
+
 	/*
 	This Function is used to initialize the GUI with customized componnents per simulations 
 	input: DUC pointer for the DrawingUtilities to setup the UI componnents

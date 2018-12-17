@@ -15,14 +15,11 @@ vector<int> SphereSystem::X_SortBalls()
 	{
 		int x = floorf(ball->Position.x / ball->Radius);
 		int y = floorf(ball->Position.z / ball->Radius);
-		int index = (y * m_iGridWidth) + x;
+		int index = ((y * m_iGridWidth) + x) * MAXCOUNT;
 		// In passender Zelle speichern falls möglich
 		if(m_GridOccupation[index] < MAXCOUNT)
 		{
-			// Problem: ist die folgende Sortierung eindeutig?
-			// z.b. index = 2, m_GridOccupation[2] = 9 und index = 3, m_GridOccupation[3] = 8
 			m_GridAccelerator[index + m_GridOccupation[index]++] = &*ball;
-
 			// Belegten Index ggf. speichern
 			if (find(notEmpty.begin(), notEmpty.end(), index) == notEmpty.end())
 				notEmpty.push_back(index);
@@ -198,9 +195,7 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	m_iAccelerator(pi_iAccelerator)
 {
 	// Zellengröße bestimmen
-	// Problem: Ehhhh... das ist eigentlich Zellenanzahl oder Größe?? 
 	float gridDim = ceilf(sqrtf((float) pi_iNumSpheres));
-	
 	// Als Box speichern
 	m_v3BoxSize = Vec3(gridDim * pi_fRadius);
 	// Grid erstellen

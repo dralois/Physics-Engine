@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 
 #include "SphereSystem.h"
 
@@ -6,37 +6,40 @@
 
 #pragma region Internal
 
-// Sortiert alle Bälle in ensprechende Zellen ein
+// Sortiert alle BÃ¤lle in ensprechende Zellen ein
 vector<int> SphereSystem::X_SortBalls()
 {
 	vector<int> notEmpty;
-	// Alle Bälle sortieren
+	// Alle BÃ¤lle sortieren
 	for(auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
 	{
 		int x = floorf(ball->Position.x / ball->Radius);
 		int y = floorf(ball->Position.z / ball->Radius);
 		int index = (y * m_iGridWidth) + x;
-		// In passender Zelle speichern falls möglich
+		// In passender Zelle speichern falls mÃ¶glich
 		if(m_GridOccupation[index] < MAXCOUNT)
 		{
+			// Problem: ist die folgende Sortierung eindeutig?
+			// z.b. index = 2, m_GridOccupation[2] = 9 und index = 3, m_GridOccupation[3] = 8
 			m_GridAccelerator[index + m_GridOccupation[index]++] = &*ball;
+
 			// Belegten Index ggf. speichern
 			if (find(notEmpty.begin(), notEmpty.end(), index) == notEmpty.end())
 				notEmpty.push_back(index);
 		}
 	}
-	// Gebe belegte Zellen zurück
+	// Gebe belegte Zellen zurÃ¼ck
 	return notEmpty;
 }
 
-// Überprüft Zellennachbarn auf Kollisionen
+// Ã¼berprÃ¼fe Zellennachbarn auf Kollisionen
 vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 {
 	vector<int> neighbors;
 	// Index berechnen
 	int cellX = pi_iCell % m_iGridWidth;
 	int cellY = pi_iCell / m_iGridWidth;
-	// Überprüfe Nachbarn
+	// Ã¼berprÃ¼fe Nachbarn
 	for(int x = -1; x < 2; x++)
 	{
 		for(int y = -1; y < 2; y++)
@@ -44,7 +47,7 @@ vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 			// Eigene Zelle ignorieren
 			if (x == y == 0)
 				continue;
-			// Randfälle behandeln
+			// RandfÃ¤lle behandeln
 			if (cellX + x < 0 || cellX + x >= m_iGridWidth)
 				continue;
 			if (cellY + y < 0 || cellY + y >= m_GridOccupation.size() / m_iGridWidth)
@@ -57,11 +60,11 @@ vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 			}
 		}
 	}
-	// Gebe Nachbarnliste zurück
+	// Gebe Nachbarnliste zurÃ¼ck
 	return neighbors;
 }
 
-// Bälle dürfen Box nicht verlassen
+// BÃ¤lle dÃ¼rfen Box nicht verlassen
 void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 {
 	// Positive Richtung clampen
@@ -80,33 +83,35 @@ void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 		ball.Position.z = 0.0f;
 }
 
-// Überprüft auf Kollision und updatet Kräfte
+// Ã¼berprÃ¼ft auf Kollision und updatet KrÃ¤fte
 void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, const function<float(float)>& kernel, float fScaler)
 {
 	float dist = sqrtf(ball1.Position.squaredDistanceTo(ball2.Position));
 	// Radius kleiner Abstand?
-	if(dist < ball1.Radius)
+	if(dist <= ball1.Radius + ball2.Radius)
 	{
 		Vec3 collNorm = getNormalized(ball1.Position - ball2.Position);
-		ball1.Force += fScaler * kernel(dist / ball1.Radius * 2.0f) * collNorm;
+		Vec3 collForce = fScaler * kernel(dist / ball1.Radius * 2.0f) * collNorm;
+		ball1.Force += collForce;
+		ball2.Force -= collForce;
 	}
 }
 
 #pragma endregion
 
-// Rendert Bälle in übergebener Farbe
+// Rendert BÃ¤lle in Ã¼bergebener Farbe
 void SphereSystem::drawFrame(DrawingUtilitiesClass* DUC, const Vec3& v3Color)
 {
 	// Farbe einrichten
 	DUC->setUpLighting(Vec3(), 0.6f*Vec3(1.0f), 100.0f, v3Color);
-	// Bälle rendern
+	// BÃ¤lle rendern
 	for(auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
 	{
 		DUC->drawSphere(ball->Position, Vec3(ball->Radius));
 	}
 }
 
-// Externe Kräfte anwenden (z.B. Maus, Gravitation, Damping)
+// Externe KrÃ¤te anwenden (z.B. Maus, Gravitation, Damping)
 // TODO Demo 1,2,3
 void SphereSystem::externalForcesCalculations(float timeElapsed, Vec3 v3MouseForce)
 {
@@ -125,7 +130,7 @@ void SphereSystem::simulateTimestep(float timeStep)
 	}
 }
 
-// Löst Kollisionen auf
+// LÃ¶st Kollisionen auf
 void SphereSystem::collisionResolve(const function<float(float)>& kernel, float fScaler)
 {
 	switch (m_iAccelerator)
@@ -140,7 +145,7 @@ void SphereSystem::collisionResolve(const function<float(float)>& kernel, float 
 				// Verhindere Kollision mit selbst
 				if (ball != coll)
 				{
-					// Löse Kollision auf falls es eine gibt
+					// LÃ¶se Kollision auf falls es eine gibt
 					X_ApplyCollision(*ball, *coll, kernel, fScaler);
 				}
 			}
@@ -150,20 +155,20 @@ void SphereSystem::collisionResolve(const function<float(float)>& kernel, float 
 	// Grid Acceleration
 	case 1:
 	{
-		// Sortiere Bälle in Zellen, speichere belegte Zellen
+		// Sortiere BÃ¤lle in Zellen, speichere belegte Zellen
 		vector<int> toCheck = X_SortBalls();
-		// Für alle belegten Zellen
+		// FÃ¼r alle belegten Zellen
 		for(int i = 0; i < toCheck.size(); i++)
 		{
 			// Bestimme Nachbarindizes
 			vector<int> neighbors = X_CheckNeighbors(toCheck[i]);
-			// Für alle Bälle in der Zelle
+			// FÃ¼r alle BÃ¤lle in der Zelle
 			for(int k = 0; k < m_GridOccupation[toCheck[i]]; k++)
 			{
-				// Für alle Nachbarn
+				// FÃ¼r alle Nachbarn
 				for(int j = 0; j < neighbors.size(); j++)
 				{
-					// Löse Kollision auf
+					// LÃ¶se Kollision auf
 					X_ApplyCollision(	*m_GridAccelerator[toCheck[i] + k],
 														*m_GridAccelerator[neighbors[j]],
 														kernel, fScaler);
@@ -192,21 +197,23 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 														float pi_fRadius, float pi_fMass) :
 	m_iAccelerator(pi_iAccelerator)
 {
-	// Zellengröße bestimmen
+	// ZellengrÃ¶ÃŸe bestimmen
+	// Problem: Ehhhh... das ist eigentlich Zellenanzahl oder GrÃ¶ÃŸe?? 
 	float gridDim = ceilf(sqrtf((float) pi_iNumSpheres));
+	
 	// Als Box speichern
 	m_v3BoxSize = Vec3(gridDim * pi_fRadius);
 	// Grid erstellen
 	m_iGridWidth = gridDim;
 	m_GridOccupation.resize(gridDim * gridDim);
 	m_GridAccelerator.resize(gridDim * gridDim * MAXCOUNT);
-	// Bälle erstellen
+	// BÃ¤lle erstellen
 	for(int i = 0; i < pi_iNumSpheres; i++)
 	{
 		Ball newBall;
 		// Erstelle Ball
 		newBall.Force = newBall.ForceTilde = newBall.PositionTilde = Vec3(0.0f);
-		// Spawne Bälle in einem Matrixraster
+		// Spawne BÃ¤lle in einem Matrixraster
 		newBall.Position = Vec3(floorf(((float) i) / gridDim),
 			((float)i) - (floorf(((float)i) / gridDim) * gridDim), gridDim);
 		newBall.Radius = pi_fRadius;
@@ -216,7 +223,7 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	}
 }
 
-// Aufräumen
+// AufrÃ¤umen
 SphereSystem::~SphereSystem()
 {
 	m_GridAccelerator.clear();

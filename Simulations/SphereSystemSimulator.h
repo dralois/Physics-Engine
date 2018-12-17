@@ -26,24 +26,24 @@ public:
 
 private:
 	// Attributes
-	float		m_fForceScaling;
-	Vec3		m_v3ExternalForce;
-	int			m_iNumSpheres;
-	float		m_fRadius;
-	float		m_fMass;
+	float			m_fForceScaling;
+	Vec3				m_v3ExternalForce;			// Problem: diese Variable ist eigentlich nicht genutzt
+	int				m_iNumSpheres;
+	float			m_fRadius;
+	float			m_fMass;
 
 	// UI Attributes
-	Point2D		m_v2Oldtrackmouse;
-	Point2D		m_v2Trackmouse;
-	Point2D		m_v2Mouse;
+	Point2D			m_v2Oldtrackmouse;
+	Point2D			m_v2Trackmouse;
+	Point2D			m_v2Mouse;
 
 	// Other
-	int							m_iKernel;
-	static					std::function<float(float)> m_Kernels[5];
-	int							m_iAccelerator;
-	SphereSystem*		m_pSphereSystem;
-	// Für Demo 3
-	SphereSystem*		m_pSphereSystemGrid;
+	int				m_iKernel;
+	static			std::function<float(float)> m_Kernels[5];
+	int				m_iAccelerator;
+	SphereSystem*	m_pSphereSystem;
+	// F¨¹r Demo 3
+	SphereSystem*	m_pSphereSystemGrid;
 
 	//Functions
 	void	X_SetupDemo();

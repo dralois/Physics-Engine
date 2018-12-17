@@ -27,22 +27,26 @@ public:
 	void drawFrame(DrawingUtilitiesClass* DUC, const Vec3& v3Color);
 	void externalForcesCalculations(float timeElapsed, Vec3 v3MouseForce);
 	void simulateTimestep(float timeStep);
+	void simulateHalfTimestep(float timeStep);
 	void collisionResolve(const function<float(float)>& kernel, float fScaler);
 private:
 	// Attributes
 	vector<Ball>	m_Balls;
-	int						m_iAccelerator;
+	int					m_iAccelerator;
 	Vec3					m_v3BoxSize;
+	float				m_fDamping;
+	float				m_fGravity;
+	Point2D				m_v2Oldtrackmouse;
+	Point2D				m_v2Trackmouse;
 	
 	// Other
-	vector<Ball*>	m_GridAccelerator;
-	vector<int>		m_GridOccupation;
-	int						m_iGridWidth;
+	vector<Ball*>		m_GridAccelerator;
+	vector<int>			m_GridOccupation;
+	int					m_iGridWidth;
 
 	// Functions
 	vector<int> X_SortBalls();
 	vector<int> X_CheckNeighbors(int pi_iCell);
 	void X_ApplyBoundingBox(Ball& ball);
-	void X_ApplyCollision(Ball& ball1, Ball& ball2,
-		const function<float(float)>& kernel, float fScaler);
+	void X_ApplyCollision(Ball& ball1, Ball& ball2,	const function<float(float)>& kernel, float fScaler);
 };

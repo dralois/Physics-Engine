@@ -152,13 +152,30 @@ void SphereSystemSimulator::notifyCaseChanged(int testCase)
 // TODO Demo 1,2,3
 void SphereSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
-	m_pSphereSystem->externalForcesCalculations(timeElapsed, Vec3(0.0f));
+	Point2D mouseDiff;
+	Vec3 mouseForce(0.0f);
+	// Berechne Differenz
+	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
+	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
+	// Falls linke Maustaste gedrückt
+	if (mouseDiff.x != 0 || mouseDiff.y != 0)
+	{
+		// Berechne benötigte Matrix
+		Mat4 worldViewInv = Mat4(DUC->g_camera.GetWorldMatrix() * DUC->g_camera.GetViewMatrix()).inverse();
+		// Vektor bestehend aus Mausverschiebung
+		Vec3 inputView = Vec3((float)-mouseDiff.x, (float)mouseDiff.y, 0);
+		// Bestimme Kraft im Worldspace mit Faktor
+		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.001f;
+	}
+	m_pSphereSystem->externalForcesCalculations(timeElapsed, mouseForce);
 }
 
 // Simulation updaten
 // TODO Demo 3
 void SphereSystemSimulator::simulateTimestep(float timeStep)
 {
+	// Für Midpoint muss man zuerst halben Zeitschritt simulieren
+	m_pSphereSystem->simulateHalfTimestep(timeStep);
 	m_pSphereSystem->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
 	m_pSphereSystem->simulateTimestep(timeStep);
 }

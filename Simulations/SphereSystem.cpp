@@ -13,8 +13,8 @@ vector<int> SphereSystem::X_SortBalls()
 	// Alle Bälle sortieren
 	for(auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
 	{
-		int x = floorf(ball->Position.x / (ball->Radius * 2.0f));
-		int y = floorf(ball->Position.z / (ball->Radius * 2.0f));
+		int x = fminf(floorf(ball->Position.x / (ball->Radius * 2.0f)), (m_iGridWidth - 1) * 1.0f);
+		int y = fminf(floorf(ball->Position.z / (ball->Radius * 2.0f)), (m_iGridWidth - 1) * 1.0f);
 		int index = ((y * m_iGridWidth) + x);
 		// In passender Zelle speichern falls möglich
 		if(m_GridOccupation[index] < MAXCOUNT)
@@ -199,6 +199,10 @@ void SphereSystem::collisionResolve(function<float(float)> kernel, float fScaler
 	// Grid Acceleration
 	case 1:
 	{
+		for(int i = 0; i < m_GridOccupation.size(); i++)
+		{
+			m_GridOccupation[i] = 0;
+		}
 		// Sortiere Bälle in Zellen, speichere belegte Zellen
 		vector<int> toCheck = X_SortBalls();
 		// Für alle belegten Zellen
@@ -214,9 +218,14 @@ void SphereSystem::collisionResolve(function<float(float)> kernel, float fScaler
 				{
 					for(int l = 0; l < m_GridOccupation[neighbors[j]]; l++)
 					{
+						int own = (toCheck[i] * MAXCOUNT) + k;
+						int neighbor = (neighbors[j] * MAXCOUNT) + l;
+						// Überspringe Kollision mit selbst
+						if (own == neighbor)
+							continue;
 						// Löse Kollision auf
-						X_ApplyCollision(	*m_GridAccelerator[(toCheck[i] * MAXCOUNT) + k],
-															*m_GridAccelerator[(neighbors[j] * MAXCOUNT) + l],
+						X_ApplyCollision(	*m_GridAccelerator[own],
+															*m_GridAccelerator[neighbor],
 															kernel, fScaler);
 					}
 				}

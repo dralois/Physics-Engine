@@ -100,7 +100,7 @@ void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 }
 
 // überprüft auf Kollision und updatet Kräfte
-void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, const function<float(float)>& kernel, float fScaler)
+void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, function<float(float)> kernel, float fScaler)
 {
 	// Zum Achten: man braucht nur die Kraft für Ball 1 aktualisieren, nicht für Ball 2, sonst ist jede Kraft zweimal berechnet
 	// Für Kollisionen am Anfang vom Zeitschritt
@@ -180,7 +180,7 @@ void SphereSystem::simulateTimestep(float timeStep)
 }
 
 // Löst Kollisionen auf
-void SphereSystem::collisionResolve(const function<float(float)>& kernel, float fScaler)
+void SphereSystem::collisionResolve(function<float(float)> kernel, float fScaler)
 {
 	switch (m_iAccelerator)
 	{
@@ -247,23 +247,28 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	m_iAccelerator(pi_iAccelerator)
 {
 	// Zellenanzahl bestimmen
-	float cellAmount = ((float)(pi_iNumSpheres)) / ((float)(MAXCOUNT));
-	int gridDim = ceil(sqrtf(cellAmount));
+	int gridDim = ceil(sqrtf(pi_iNumSpheres));
 	// Als Box speichern
-	m_v3BoxSize = Vec3(gridDim * pi_fRadius);
+	m_v3BoxSize = Vec3(gridDim * pi_fRadius * 2.0f);
 	// Grid erstellen
 	m_iGridWidth = gridDim;
 	m_GridOccupation.resize(gridDim * gridDim);
 	m_GridAccelerator.resize(gridDim * gridDim * MAXCOUNT);
+	m_fDamping = 1.0f;
+	m_fGravity = 9.81f;
 	// Bälle erstellen
 	for(int i = 0; i < pi_iNumSpheres; i++)
 	{
 		Ball newBall;
 		// Erstelle Ball
 		newBall.Force = newBall.ForceTilde = newBall.PositionTilde = Vec3(0.0f);
+		// Zelle berechnen
+		int cellX = i % gridDim;
+		int cellY = i / gridDim;
 		// Spawne Bälle in einem Matrixraster
-		newBall.Position = Vec3(floorf(((float) i) / gridDim),
-			((float)i) - (floorf(((float)i) / gridDim) * gridDim), gridDim);
+		newBall.Position = Vec3(cellX * pi_fRadius * 2.0f + pi_fRadius,
+														gridDim * pi_fRadius * 2.0f,
+														cellY * pi_fRadius * 2.0f + pi_fRadius);
 		newBall.Radius = pi_fRadius;
 		newBall.Mass = pi_fMass;
 		// Im Array speichern

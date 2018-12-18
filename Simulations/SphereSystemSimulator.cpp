@@ -78,6 +78,7 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	case 0:
 	case 1:
 	case 2:
+		TwAddVarRW(DUC->g_pTweakBar, "Sphere Size", TW_TYPE_INT32, &m_iNumSpheres, "min=10 step=10");
 		break;
 	default:
 		break;
@@ -87,11 +88,14 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 // Setzte Simulation zurück
 void SphereSystemSimulator::reset()
 {
-	m_fForceScaling = 0.0f;
+	m_fForceScaling = 1.0f;
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_v3ExternalForce = Vec3(0.0f);
-	m_fMass = m_fRadius = 1.0f;
+	m_fMass = 1.0f;
+	m_fRadius = .1f;
+	m_iNumSpheres = 10;
+	m_iKernel = 1;
 	// Ballsystem löschen
 	if(m_pSphereSystem)
 		delete m_pSphereSystem;

@@ -28,7 +28,7 @@ public:
 	void externalForcesCalculations(float timeElapsed, Vec3 v3MouseForce);
 	void simulateTimestep(float timeStep);
 	void simulateHalfTimestep(float timeStep);
-	void collisionResolve(const function<float(float)>& kernel, float fScaler);
+	void collisionResolve(function<float(float)> kernel, float fScaler);
 private:
 	// Attributes
 	vector<Ball>	m_Balls;
@@ -48,5 +48,5 @@ private:
 	vector<int> X_SortBalls();
 	vector<int> X_CheckNeighbors(int pi_iCell);
 	void X_ApplyBoundingBox(Ball& ball);
-	void X_ApplyCollision(Ball& ball1, Ball& ball2,	const function<float(float)>& kernel, float fScaler);
+	void X_ApplyCollision(Ball& ball1, Ball& ball2, function<float(float)> kernel, float fScaler);
 };

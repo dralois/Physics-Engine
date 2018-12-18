@@ -31,18 +31,19 @@ public:
 	void collisionResolve(function<float(float)> kernel, float fScaler);
 private:
 	// Attributes
-	vector<Ball>	m_Balls;
+	vector<Ball>m_Balls;
 	int					m_iAccelerator;
-	Vec3					m_v3BoxSize;
-	float				m_fDamping;
-	float				m_fGravity;
-	Point2D				m_v2Oldtrackmouse;
-	Point2D				m_v2Trackmouse;
-	
+	Vec3				m_v3BoxSize;
+	float				m_fDamping = 1.0f;
+	float				m_fGravity = 9.81f;
+	Point2D			m_v2Oldtrackmouse;
+	Point2D			m_v2Trackmouse;
+	bool				m_Deleted = false;
+
 	// Other
-	vector<Ball*>		m_GridAccelerator;
-	vector<int>			m_GridOccupation;
-	int					m_iGridWidth;
+	vector<Ball*>	m_GridAccelerator;
+	vector<int>		m_GridOccupation;
+	int						m_iGridWidth;
 
 	// Functions
 	vector<int> X_SortBalls();

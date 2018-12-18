@@ -13,13 +13,13 @@ vector<int> SphereSystem::X_SortBalls()
 	// Alle Bälle sortieren
 	for(auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
 	{
-		int x = floorf(ball->Position.x / ball->Radius);
-		int y = floorf(ball->Position.z / ball->Radius);
-		int index = ((y * m_iGridWidth) + x) * MAXCOUNT;
+		int x = floorf(ball->Position.x / (ball->Radius * 2.0f));
+		int y = floorf(ball->Position.z / (ball->Radius * 2.0f));
+		int index = ((y * m_iGridWidth) + x);
 		// In passender Zelle speichern falls möglich
 		if(m_GridOccupation[index] < MAXCOUNT)
 		{
-			m_GridAccelerator[index + m_GridOccupation[index]++] = &*ball;
+			m_GridAccelerator[(index * MAXCOUNT) + m_GridOccupation[index]++] = &*ball;
 			// Belegten Index ggf. speichern
 			if (find(notEmpty.begin(), notEmpty.end(), index) == notEmpty.end())
 				notEmpty.push_back(index);
@@ -41,21 +41,15 @@ vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 	{
 		for(int y = -1; y < 2; y++)
 		{
-			// Eigene Zelle ignorieren
-			if (x == y == 0)
-				continue;
 			// Randfälle behandeln
 			if (cellX + x < 0 || cellX + x >= m_iGridWidth)
 				continue;
 			// m_GridOccupation.size() / m_iGridWidth ist eigentlich gleich m_iGridWidth da Quadrat
-			if (cellY + y < 0 || cellY + y >= m_GridOccupation.size() / m_iGridWidth)
+			if (cellY + y < 0 || cellY + y >= m_iGridWidth)
 				continue;
 			// Speichere alle Nachbarn in Array
 			int index = ((cellY + y) * m_iGridWidth) + (cellX + x);
-			for(int j = 0; j < m_GridOccupation[index]; j++)
-			{
-				neighbors.push_back(index + j);
-			}
+			neighbors.push_back(index);
 		}
 	}
 	// Gebe Nachbarnliste zurück
@@ -108,7 +102,7 @@ void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, function<float(f
 	if(dist <= ball1.Radius + ball2.Radius)
 	{
 		Vec3 collNorm = getNormalized(ball1.Position - ball2.Position);
-		ball1.Force += fScaler * kernel(dist / ball1.Radius * 2.0f) * collNorm;
+		ball1.Force += -fScaler * kernel(dist / ball1.Radius * 2.0f) * collNorm;
 	}
 
 	// Für Kollisionen in der Mitte vom Zeitschritt
@@ -116,7 +110,7 @@ void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, function<float(f
 	if (distTilde <= ball1.Radius + ball2.Radius)
 	{
 		Vec3 collNormTilde = getNormalized(ball1.Position - ball2.Position);
-		ball1.ForceTilde += fScaler * kernel(dist / ball1.Radius * 2.0f) * collNormTilde;
+		ball1.ForceTilde += -fScaler * kernel(dist / ball1.Radius * 2.0f) * collNormTilde;
 	}
 }
 
@@ -136,11 +130,9 @@ void SphereSystem::drawFrame(DrawingUtilitiesClass* DUC, const Vec3& v3Color)
 
 // Externe Kräte anwenden (z.B. Maus, Gravitation, Damping)
 // TODO Demo 1,2,3
-
-// Problem: WTF braucht man timeElapsed für diese Methode wenn Mauskraft schon angegeben ist???
 void SphereSystem::externalForcesCalculations(float timeElapsed, Vec3 v3MouseForce)
 {
-	for (auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
+	for (auto ball = m_Balls.begin(); ball != m_Balls.end() && !m_Deleted; ball++)
 	{
 		ball->Force += Vec3(0, -1.0f * m_fGravity * ball->Mass, 0);
 		ball->Force += v3MouseForce;
@@ -157,7 +149,7 @@ void SphereSystem::externalForcesCalculations(float timeElapsed, Vec3 v3MouseFor
 void SphereSystem::simulateHalfTimestep(float timeStep)
 {
 	//Berechnen aller Positionen nach h/2 Schritt
-	for (auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
+	for (auto ball = m_Balls.begin(); ball != m_Balls.end() && !m_Deleted; ball++)
 	{
 		ball->PositionTilde = ball->Position + ball->Velocity * timeStep / 2.0f;
 	}
@@ -182,6 +174,9 @@ void SphereSystem::simulateTimestep(float timeStep)
 // Löst Kollisionen auf
 void SphereSystem::collisionResolve(function<float(float)> kernel, float fScaler)
 {
+	if (m_Deleted)
+		return;
+
 	switch (m_iAccelerator)
 	{
 	// Naiver Ansatz: Alles mit allem
@@ -217,10 +212,13 @@ void SphereSystem::collisionResolve(function<float(float)> kernel, float fScaler
 				// Für alle Nachbarn
 				for(int j = 0; j < neighbors.size(); j++)
 				{
-					// Löse Kollision auf
-					X_ApplyCollision(	*m_GridAccelerator[toCheck[i] + k],
-														*m_GridAccelerator[neighbors[j]],
-														kernel, fScaler);
+					for(int l = 0; l < m_GridOccupation[neighbors[j]]; l++)
+					{
+						// Löse Kollision auf
+						X_ApplyCollision(	*m_GridAccelerator[(toCheck[i] * MAXCOUNT) + k],
+															*m_GridAccelerator[(neighbors[j] * MAXCOUNT) + l],
+															kernel, fScaler);
+					}
 				}
 			}
 		}
@@ -254,8 +252,6 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	m_iGridWidth = gridDim;
 	m_GridOccupation.resize(gridDim * gridDim);
 	m_GridAccelerator.resize(gridDim * gridDim * MAXCOUNT);
-	m_fDamping = 1.0f;
-	m_fGravity = 9.81f;
 	// Bälle erstellen
 	for(int i = 0; i < pi_iNumSpheres; i++)
 	{
@@ -279,6 +275,7 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 // Aufräumen
 SphereSystem::~SphereSystem()
 {
+	m_Deleted = true;
 	m_GridAccelerator.clear();
 	m_GridOccupation.clear();
 	m_Balls.clear();

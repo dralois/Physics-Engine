@@ -65,16 +65,17 @@ void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 		ball.Position.x = m_v3BoxSize.x;
 		ball.Velocity = Vec3(-1.0 * ball.Velocity.x, ball.Velocity.y, ball.Velocity.z);
 	}
-	if (ball.Position.y > m_v3BoxSize.y)
+	/* if (ball.Position.y > m_v3BoxSize.y)
 	{
 		ball.Position.y = m_v3BoxSize.y;
 		ball.Velocity = Vec3(ball.Velocity.x, -1.0f * ball.Velocity.y, ball.Velocity.z);
-	}
+	} */
 	if (ball.Position.z > m_v3BoxSize.z)
 	{
 		ball.Position.z = m_v3BoxSize.z;
 		ball.Velocity = Vec3(ball.Velocity.x, ball.Velocity.y, -1.0f * ball.Velocity.z);
 	}
+	
 	// Negative Richtung clampen
 	if (ball.Position.x < 0.0f)
 	{
@@ -85,6 +86,7 @@ void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 	{
 		ball.Position.y = 0.0f;
 		ball.Velocity = Vec3(ball.Velocity.x, -1.0f * ball.Velocity.y, ball.Velocity.z);
+		// ball.Velocity = Vec3(ball.Velocity.x, 0.0f, ball.Velocity.z);
 	}
 	if (ball.Position.z < 0.0f)
 	{
@@ -264,20 +266,31 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	// Bälle erstellen
 	for(int i = 0; i < pi_iNumSpheres; i++)
 	{
-		Ball newBall;
+		Ball newBall1;
 		// Erstelle Ball
-		newBall.Force = newBall.ForceTilde = newBall.PositionTilde = Vec3(0.0f);
+		newBall1.Force = newBall1.ForceTilde = newBall1.PositionTilde = Vec3(0.0f);
 		// Zelle berechnen
 		int cellX = i % gridDim;
 		int cellY = i / gridDim;
 		// Spawne Bälle in einem Matrixraster
-		newBall.Position = Vec3(cellX * pi_fRadius * 2.0f + pi_fRadius,
-														gridDim * pi_fRadius * 2.0f,
-														cellY * pi_fRadius * 2.0f + pi_fRadius);
-		newBall.Radius = pi_fRadius;
-		newBall.Mass = pi_fMass;
+		newBall1.Position = Vec3(		cellX * pi_fRadius * 2.0f + pi_fRadius,
+									gridDim * pi_fRadius * 2.0f,
+									cellY * pi_fRadius * 2.0f + pi_fRadius);
+		newBall1.Radius = pi_fRadius;
+		newBall1.Mass = pi_fMass;
 		// Im Array speichern
-		m_Balls.push_back(newBall);
+		m_Balls.push_back(newBall1);
+
+		// Andere Balllayer
+		Ball newBall2;
+		newBall2.Force = newBall2.ForceTilde = newBall2.PositionTilde = Vec3(0.0f);
+		newBall2.Position = Vec3(	cellX * pi_fRadius * 2.0f + pi_fRadius,
+									(gridDim - 1) * pi_fRadius * 2.0f,
+									cellY * pi_fRadius * 2.0f + pi_fRadius);
+		newBall2.Radius = pi_fRadius;
+		newBall2.Mass = pi_fMass;
+		// Im Array speichern
+		m_Balls.push_back(newBall2);
 	}
 }
 

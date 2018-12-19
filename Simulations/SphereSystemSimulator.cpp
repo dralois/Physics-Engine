@@ -88,13 +88,13 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 // Setzte Simulation zurück
 void SphereSystemSimulator::reset()
 {
-	m_fForceScaling = 1.0f;
+	m_fForceScaling = 15.0f;
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_v3ExternalForce = Vec3(0.0f);
 	m_fMass = 1.0f;
 	m_fRadius = .1f;
-	m_iNumSpheres = 100;
+	m_iNumSpheres = 49;
 	m_iKernel = 1;
 	// Ballsystem löschen
 	if(m_pSphereSystem)

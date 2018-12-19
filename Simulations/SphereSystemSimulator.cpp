@@ -91,9 +91,15 @@ void SphereSystemSimulator::reset()
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	// Ballsystem löschen
 	if(m_pSphereSystem)
+	{
 		delete m_pSphereSystem;
+		m_pSphereSystem = NULL;
+	}
 	if (m_pSphereSystemGrid)
+	{
 		delete m_pSphereSystemGrid;
+		m_pSphereSystemGrid = NULL;
+	}
 }
 
 // Rendere Simulation

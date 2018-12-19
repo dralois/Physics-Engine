@@ -13,8 +13,8 @@ vector<int> SphereSystem::X_SortBalls()
 	// Alle Bälle sortieren
 	for(auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
 	{
-		int x = fminf(floorf(ball->Position.x / (ball->Radius * 2.0f)), (m_iGridWidth - 1) * 1.0f);
-		int y = fminf(floorf(ball->Position.z / (ball->Radius * 2.0f)), (m_iGridWidth - 1) * 1.0f);
+		int x = fminf(floorf(ball->Position.x / (ball->Radius * 2.0f)) + m_iGridWidth / 2, (m_iGridWidth - 1) * 1.0f);
+		int y = fminf(floorf(ball->Position.z / (ball->Radius * 2.0f)) + m_iGridWidth / 2, (m_iGridWidth - 1) * 1.0f);
 		int index = ((y * m_iGridWidth) + x);
 		// In passender Zelle speichern falls möglich
 		if(m_GridOccupation[index] < MAXCOUNT)
@@ -60,37 +60,31 @@ vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 {
 	// Positive Richtung clampen und Ball zurückspringen
-	if (ball.Position.x > m_v3BoxSize.x) 
+	if (ball.Position.x > m_v3BoxSize.x + m_v3BoxPos.x) 
 	{
-		ball.Position.x = m_v3BoxSize.x;
+		ball.Position.x = m_v3BoxSize.x + m_v3BoxPos.x;
 		ball.Velocity = Vec3(-1.0 * ball.Velocity.x, ball.Velocity.y, ball.Velocity.z);
 	}
-	/* if (ball.Position.y > m_v3BoxSize.y)
+	if (ball.Position.z > m_v3BoxSize.z + m_v3BoxPos.z)
 	{
-		ball.Position.y = m_v3BoxSize.y;
-		ball.Velocity = Vec3(ball.Velocity.x, -1.0f * ball.Velocity.y, ball.Velocity.z);
-	} */
-	if (ball.Position.z > m_v3BoxSize.z)
-	{
-		ball.Position.z = m_v3BoxSize.z;
+		ball.Position.z = m_v3BoxSize.z + m_v3BoxPos.z;
 		ball.Velocity = Vec3(ball.Velocity.x, ball.Velocity.y, -1.0f * ball.Velocity.z);
 	}
 	
 	// Negative Richtung clampen
-	if (ball.Position.x < 0.0f)
+	if (ball.Position.x < m_v3BoxPos.x)
 	{
-		ball.Position.x = 0.0f;
+		ball.Position.x = m_v3BoxPos.x;
 		ball.Velocity = Vec3(-1.0 * ball.Velocity.x, ball.Velocity.y, ball.Velocity.z);
 	}
-	if (ball.Position.y < 0.0f)
+	if (ball.Position.y < m_v3BoxPos.y)
 	{
-		ball.Position.y = 0.0f;
+		ball.Position.y = m_v3BoxPos.y;
 		ball.Velocity = Vec3(ball.Velocity.x, -1.0f * ball.Velocity.y, ball.Velocity.z);
-		// ball.Velocity = Vec3(ball.Velocity.x, 0.0f, ball.Velocity.z);
 	}
-	if (ball.Position.z < 0.0f)
+	if (ball.Position.z < m_v3BoxPos.z)
 	{
-		ball.Position.z = 0.0f;
+		ball.Position.z = m_v3BoxPos.z;
 		ball.Velocity = Vec3(ball.Velocity.x, ball.Velocity.y, -1.0f * ball.Velocity.z);
 	}
 }
@@ -131,7 +125,6 @@ void SphereSystem::drawFrame(DrawingUtilitiesClass* DUC, const Vec3& v3Color)
 }
 
 // Externe Kräte anwenden (z.B. Maus, Gravitation, Damping)
-// TODO Demo 1,2,3
 void SphereSystem::externalForcesCalculations(float timeElapsed, Vec3 v3MouseForce)
 {
 	for (auto ball = m_Balls.begin(); ball != m_Balls.end() && !m_Deleted; ball++)
@@ -147,7 +140,6 @@ void SphereSystem::externalForcesCalculations(float timeElapsed, Vec3 v3MouseFor
 }
 
 // Simuliert einen Zeitschritt
-// TODO Demo 1,2,3
 void SphereSystem::simulateHalfTimestep(float timeStep)
 {
 	//Berechnen aller Positionen nach h/2 Schritt
@@ -156,6 +148,8 @@ void SphereSystem::simulateHalfTimestep(float timeStep)
 		ball->PositionTilde = ball->Position + ball->Velocity * timeStep / 2.0f;
 	}
 }
+
+// Simuliert einen Zeitschritt
 void SphereSystem::simulateTimestep(float timeStep)
 {
 	// Aktualisiere Geschwindigkeit/Position
@@ -261,6 +255,7 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	int gridDim = ceil(sqrtf(pi_iNumSpheres));
 	// Als Box speichern
 	m_v3BoxSize = Vec3(gridDim * pi_fRadius * 2.0f);
+	m_v3BoxPos = Vec3(-(gridDim * pi_fRadius));
 	// Grid erstellen
 	m_iGridWidth = gridDim;
 	m_GridOccupation.resize(gridDim * gridDim);
@@ -269,8 +264,8 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	for(int i = 0; i < pi_iNumSpheres; i++)
 	{
 		// Zelle berechnen
-		int cellX = i % gridDim;
-		int cellY = i / gridDim;
+		int cellX = (i % gridDim) - gridDim / 2;
+		int cellY = (i / gridDim) - gridDim / 2;
 		// Erstelle Ball
 		Ball newBall1;
 		newBall1.Force = newBall1.ForceTilde = newBall1.PositionTilde = Vec3(0.0f);
@@ -299,9 +294,13 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 SphereSystem::~SphereSystem()
 {
 	m_Deleted = true;
-	m_GridAccelerator.clear();
-	m_GridOccupation.clear();
-	m_Balls.clear();
+	if (m_GridAccelerator.size() > 0)
+	{
+		m_GridAccelerator.clear();
+		m_GridOccupation.clear();
+	}
+	if(m_Balls.size() > 0)
+		m_Balls.clear();
 }
 
 #pragma endregion

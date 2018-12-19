@@ -34,6 +34,7 @@ private:
 	vector<Ball>m_Balls;
 	int					m_iAccelerator;
 	Vec3				m_v3BoxSize;
+	Vec3				m_v3BoxPos;
 	float				m_fDamping = 1.0f;
 	float				m_fGravity = 9.81f;
 	Point2D			m_v2Oldtrackmouse;

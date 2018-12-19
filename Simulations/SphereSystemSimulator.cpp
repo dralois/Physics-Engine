@@ -52,14 +52,14 @@ void SphereSystemSimulator::X_SetupDemo()
 	switch(m_iTestCase)
 	{
 		case 0:
-			m_pSphereSystem = new SphereSystem(NAIVEACC, m_iNumSpheres, m_fRadius, m_fMass);
+			m_pSphereSystem = new SphereSystem(NAIVEACC, 100, m_fRadius, m_fMass);
 			break;
 		case 1:
-			m_pSphereSystem = new SphereSystem(GRIDACC, m_iNumSpheres, m_fRadius, m_fMass);
+			m_pSphereSystem = new SphereSystem(GRIDACC, 100, m_fRadius, m_fMass);
 			break;
 		case 2:
-			m_pSphereSystem = new SphereSystem(NAIVEACC, m_iNumSpheres, m_fRadius, m_fMass);
-			m_pSphereSystemGrid = new SphereSystem(GRIDACC, m_iNumSpheres, m_fRadius, m_fMass);
+			m_pSphereSystem = new SphereSystem(NAIVEACC, 100, m_fRadius, m_fMass);
+			m_pSphereSystemGrid = new SphereSystem(GRIDACC, 100, m_fRadius, m_fMass);
 			break;
 		default:
 			break;
@@ -69,7 +69,6 @@ void SphereSystemSimulator::X_SetupDemo()
 #pragma endregion
 
 // Initialisiere UI je nach Demo
-// TODO Demo 1,2,3
 void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 {
 	this->DUC = DUC;
@@ -78,7 +77,6 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	case 0:
 	case 1:
 	case 2:
-		TwAddVarRW(DUC->g_pTweakBar, "Sphere Size", TW_TYPE_INT32, &m_iNumSpheres, "min=10 step=10");
 		break;
 	default:
 		break;
@@ -88,14 +86,9 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 // Setzte Simulation zurück
 void SphereSystemSimulator::reset()
 {
-	m_fForceScaling = 15.0f;
+	m_iKernel = 1;
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
-	m_v3ExternalForce = Vec3(0.0f);
-	m_fMass = 1.0f;
-	m_fRadius = .1f;
-	m_iNumSpheres = 49;
-	m_iKernel = 1;
 	// Ballsystem löschen
 	if(m_pSphereSystem)
 		delete m_pSphereSystem;
@@ -154,7 +147,6 @@ void SphereSystemSimulator::notifyCaseChanged(int testCase)
 }
 
 // Externe Kräfte updaten
-// TODO Demo 1,2,3
 void SphereSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
 	Point2D mouseDiff;
@@ -178,7 +170,6 @@ void SphereSystemSimulator::externalForcesCalculations(float timeElapsed)
 }
 
 // Simulation updaten
-// TODO Demo 3
 void SphereSystemSimulator::simulateTimestep(float timeStep)
 {
 	// Für Midpoint muss man zuerst halben Zeitschritt simulieren

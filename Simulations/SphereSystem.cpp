@@ -96,7 +96,7 @@ void SphereSystem::X_ApplyBoundingBox(Ball & ball)
 }
 
 // überprüft auf Kollision und updatet Kräfte
-void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, function<float(float)> kernel, float fScaler)
+void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, function<float(float)> & kernel, float fScaler)
 {
 	// Zum Achten: man braucht nur die Kraft für Ball 1 aktualisieren, nicht für Ball 2, sonst ist jede Kraft zweimal berechnet
 	// Für Kollisionen am Anfang vom Zeitschritt
@@ -174,7 +174,7 @@ void SphereSystem::simulateTimestep(float timeStep)
 }
 
 // Löst Kollisionen auf
-void SphereSystem::collisionResolve(function<float(float)> kernel, float fScaler)
+void SphereSystem::collisionResolve(function<float(float)> & kernel, float fScaler)
 {
 	if (m_Deleted)
 		return;
@@ -255,6 +255,8 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 														float pi_fRadius, float pi_fMass) :
 	m_iAccelerator(pi_iAccelerator)
 {
+	// Anzahl halbieren
+	pi_iNumSpheres /= 2;
 	// Zellenanzahl bestimmen
 	int gridDim = ceil(sqrtf(pi_iNumSpheres));
 	// Als Box speichern
@@ -266,16 +268,15 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 	// Bälle erstellen
 	for(int i = 0; i < pi_iNumSpheres; i++)
 	{
-		Ball newBall1;
-		// Erstelle Ball
-		newBall1.Force = newBall1.ForceTilde = newBall1.PositionTilde = Vec3(0.0f);
 		// Zelle berechnen
 		int cellX = i % gridDim;
 		int cellY = i / gridDim;
-		// Spawne Bälle in einem Matrixraster
-		newBall1.Position = Vec3(		cellX * pi_fRadius * 2.0f + pi_fRadius,
-									gridDim * pi_fRadius * 2.0f,
-									cellY * pi_fRadius * 2.0f + pi_fRadius);
+		// Erstelle Ball
+		Ball newBall1;
+		newBall1.Force = newBall1.ForceTilde = newBall1.PositionTilde = Vec3(0.0f);
+		newBall1.Position = Vec3(	cellX * pi_fRadius * 2.0f + pi_fRadius,
+															gridDim * pi_fRadius * 2.0f,
+															cellY * pi_fRadius * 2.0f + pi_fRadius);
 		newBall1.Radius = pi_fRadius;
 		newBall1.Mass = pi_fMass;
 		// Im Array speichern
@@ -285,8 +286,8 @@ SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
 		Ball newBall2;
 		newBall2.Force = newBall2.ForceTilde = newBall2.PositionTilde = Vec3(0.0f);
 		newBall2.Position = Vec3(	cellX * pi_fRadius * 2.0f + pi_fRadius,
-									(gridDim - 1) * pi_fRadius * 2.0f,
-									cellY * pi_fRadius * 2.0f + pi_fRadius);
+															(gridDim - 1) * pi_fRadius * 2.0f,
+															cellY * pi_fRadius * 2.0f + pi_fRadius);
 		newBall2.Radius = pi_fRadius;
 		newBall2.Mass = pi_fMass;
 		// Im Array speichern

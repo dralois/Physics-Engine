@@ -104,16 +104,17 @@ void SphereSystemSimulator::reset()
 }
 
 // Rendere Simulation
-// TODO Demo 3
 void SphereSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 {
 	switch (m_iTestCase)
 	{
 	case 0:
 	case 1:
-	case 2:
-	case 3:
 		m_pSphereSystem->drawFrame(DUC, Vec3(1.0f, 0.0f, 0.0f));
+		break;
+	case 2:
+		m_pSphereSystem->drawFrame(DUC, Vec3(1.0f, 0.0f, 0.0f));
+		m_pSphereSystemGrid->drawFrame(DUC, Vec3(0.0f, 1.0f, 0.0f));
 		break;
 	default:
 		break;
@@ -179,9 +180,25 @@ void SphereSystemSimulator::externalForcesCalculations(float timeElapsed)
 void SphereSystemSimulator::simulateTimestep(float timeStep)
 {
 	// Für Midpoint muss man zuerst halben Zeitschritt simulieren
-	m_pSphereSystem->simulateHalfTimestep(timeStep);
-	m_pSphereSystem->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
-	m_pSphereSystem->simulateTimestep(timeStep);
+	switch (m_iTestCase)
+	{
+	case 0:
+	case 1:
+		m_pSphereSystem->simulateHalfTimestep(timeStep);
+		m_pSphereSystem->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
+		m_pSphereSystem->simulateTimestep(timeStep);
+		break;
+	case 2:
+		m_pSphereSystem->simulateHalfTimestep(timeStep);
+		m_pSphereSystem->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
+		m_pSphereSystem->simulateTimestep(timeStep);
+		m_pSphereSystemGrid->simulateHalfTimestep(timeStep);
+		m_pSphereSystemGrid->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
+		m_pSphereSystemGrid->simulateTimestep(timeStep);
+		break;
+	default:
+		break;
+	}
 }
 
 #pragma endregion

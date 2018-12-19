@@ -52,14 +52,18 @@ void SphereSystemSimulator::X_SetupDemo()
 	switch(m_iTestCase)
 	{
 		case 0:
-			m_pSphereSystem = new SphereSystem(NAIVEACC, 100, m_fRadius, m_fMass);
+			m_pSphereSystem = new SphereSystem(NAIVEACC, m_iBallNumber, m_fRadius, m_fMass, m_fDamping, 
+													m_fForceScaling, m_fGravity, Vec3(0.0f));
 			break;
 		case 1:
-			m_pSphereSystem = new SphereSystem(GRIDACC, 100, m_fRadius, m_fMass);
+			m_pSphereSystem = new SphereSystem(GRIDACC, m_iBallNumber, m_fRadius, m_fMass, m_fDamping,
+													m_fForceScaling, m_fGravity, Vec3(0.0f));
 			break;
 		case 2:
-			m_pSphereSystem = new SphereSystem(NAIVEACC, 100, m_fRadius, m_fMass);
-			m_pSphereSystemGrid = new SphereSystem(GRIDACC, 100, m_fRadius, m_fMass);
+			m_pSphereSystem = new SphereSystem(NAIVEACC, m_iBallNumber, m_fRadius, m_fMass, m_fDamping,
+													m_fForceScaling, m_fGravity, m_v3ShiftingLeft);
+			m_pSphereSystemGrid = new SphereSystem(GRIDACC, m_iBallNumber, m_fRadius, m_fMass, m_fDamping, 
+													m_fForceScaling, m_fGravity, m_v3ShiftingRight);
 			break;
 		default:
 			break;
@@ -77,6 +81,10 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	case 0:
 	case 1:
 	case 2:
+		TwAddVarRW(DUC->g_pTweakBar, "Number of Balls", TW_TYPE_INT32, &m_iBallNumber, "min=32 step=10");
+		TwAddVarRW(DUC->g_pTweakBar, "Force Scale", TW_TYPE_FLOAT, &m_fForceScaling, "min=1.00 step=5.00");
+		TwAddVarRW(DUC->g_pTweakBar, "Damping", TW_TYPE_FLOAT, &m_fDamping, "min=0.00 step=0.10");
+		TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "min=0.00 step=0.10");
 		break;
 	default:
 		break;

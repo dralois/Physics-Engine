@@ -28,8 +28,11 @@ private:
 	// Attributes
 	float			m_fMass = 1.0f;
 	float			m_fRadius = 0.1f;
-	float			m_fForceScaling = 15.0f;
-
+	float			m_fForceScaling = 35.0f;
+	float			m_fDamping = 0.5f;
+	float			m_fGravity = 9.81f;
+	int				m_iBallNumber = 72;
+	
 	// UI Attributes
 	Point2D			m_v2Oldtrackmouse;
 	Point2D			m_v2Trackmouse;
@@ -41,6 +44,8 @@ private:
 	SphereSystem*	m_pSphereSystem;
 	SphereSystem*	m_pSphereSystemGrid;
 	static				std::function<float(float)> m_Kernels[5];
+	Vec3				m_v3ShiftingLeft  = Vec3(-0.8f, 0.0f, 0.0f);
+	Vec3				m_v3ShiftingRight = Vec3(0.8f, 0.0f, 0.0f);
 
 	//Functions
 	void	X_SetupDemo();

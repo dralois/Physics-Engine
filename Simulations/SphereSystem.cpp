@@ -120,7 +120,7 @@ void SphereSystem::drawFrame(DrawingUtilitiesClass* DUC, const Vec3& v3Color)
 	// Bälle rendern
 	for(auto ball = m_Balls.begin(); ball != m_Balls.end(); ball++)
 	{
-		DUC->drawSphere(ball->Position + m_v3BoxPos, Vec3(ball->Radius));
+		DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(ball->Radius));
 	}
 }
 
@@ -245,10 +245,14 @@ void SphereSystem::collisionResolve(function<float(float)> & kernel, float fScal
 #pragma region Initialisation
 
 // Initialsiert neues Ballsystem
-SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres,
-														float pi_fRadius, float pi_fMass) :
-	m_iAccelerator(pi_iAccelerator)
+SphereSystem::SphereSystem(	int pi_iAccelerator, int pi_iNumSpheres, float pi_fRadius, float pi_fMass, 
+							float pi_fDamping, float pi_fForceScaling, float pi_fGravity, Vec3 pi_v3Shifting)
 {
+	m_iAccelerator = pi_iAccelerator;
+	m_fDamping = pi_fDamping;
+	m_v3Shifting = pi_v3Shifting;
+	m_fGravity = pi_fGravity;
+
 	// Anzahl halbieren
 	pi_iNumSpheres /= 2;
 	// Zellenanzahl bestimmen

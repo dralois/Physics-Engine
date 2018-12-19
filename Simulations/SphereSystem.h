@@ -19,8 +19,8 @@ class SphereSystem
 {
 public:
 	// Construtors
-	SphereSystem(int pi_iAccelerator, int pi_iNumSpheres,
-		float pi_fRadius, float pi_fMass);
+	SphereSystem(int pi_iAccelerator, int pi_iNumSpheres, float pi_fRadius, float pi_fMass, 
+				 float pi_fDamping, float pi_fForceScaling, float pi_fGravity, Vec3 pi_v3Shifting);
 	~SphereSystem();
 
 	// Functions
@@ -35,8 +35,9 @@ private:
 	int					m_iAccelerator;
 	Vec3				m_v3BoxSize;
 	Vec3				m_v3BoxPos;
-	float				m_fDamping = 1.0f;
-	float				m_fGravity = 9.81f;
+	Vec3				m_v3Shifting;
+	float			m_fDamping ;
+	float			m_fGravity;
 	Point2D			m_v2Oldtrackmouse;
 	Point2D			m_v2Trackmouse;
 	bool				m_Deleted = false;

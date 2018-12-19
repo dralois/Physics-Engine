@@ -94,7 +94,7 @@ void SphereSystemSimulator::reset()
 	m_v3ExternalForce = Vec3(0.0f);
 	m_fMass = 1.0f;
 	m_fRadius = .1f;
-	m_iNumSpheres = 10;
+	m_iNumSpheres = 100;
 	m_iKernel = 1;
 	// Ballsystem löschen
 	if(m_pSphereSystem)
@@ -173,6 +173,8 @@ void SphereSystemSimulator::externalForcesCalculations(float timeElapsed)
 		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.001f;
 	}
 	m_pSphereSystem->externalForcesCalculations(timeElapsed, mouseForce);
+	if(m_iTestCase == 2)
+		m_pSphereSystemGrid->externalForcesCalculations(timeElapsed, mouseForce);
 }
 
 // Simulation updaten

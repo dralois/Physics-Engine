@@ -116,7 +116,7 @@ void SphereSystemSimulator::speedComparisonSimulateTimeStep2(float timeStep)
 void SphereSystemSimulator::speedComparison() 
 {
 	// time step ist 0.001 Sekunde, die Anzahl davon ist 30, und Anzahl von Balls ist n
-	int timeSteps = 30;
+	int timeSteps = 10;
 	float timeStep = 0.001f;
 	int n = 0;
 
@@ -270,6 +270,7 @@ void SphereSystemSimulator::notifyCaseChanged(int testCase)
 	{
 		// case 3 für Speed Comparison ohne Grafikanzeige
 		cout << "Demo 3 Speed Comparison without display!" << endl;
+		cout << "time step = 0.001, number of time steps = 10" << endl;
 		speedComparison();
 		break;
 	}

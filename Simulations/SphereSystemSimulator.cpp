@@ -85,6 +85,8 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 		TwAddVarRW(DUC->g_pTweakBar, "Force Scale", TW_TYPE_FLOAT, &m_fForceScaling, "min=1.00 step=5.00");
 		TwAddVarRW(DUC->g_pTweakBar, "Damping", TW_TYPE_FLOAT, &m_fDamping, "min=0.00 step=0.10");
 		TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "min=0.00 step=0.10");
+		// Entsprechend abändern
+		TwAddButton(DUC->g_pTweakBar, "TODO Demo 3", &(m_pSphereSystem->startMeasure), m_pSphereSystem, NULL);
 		break;
 	default:
 		break;

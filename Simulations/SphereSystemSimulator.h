@@ -24,8 +24,7 @@ public:
 	void onClick(int x, int y);
 	void onMouse(int x, int y);
 	void speedComparison();
-	void speedComparisonSimulateTimeStep1(float timeStep);
-	void speedComparisonSimulateTimeStep2(float timeStep);
+	void speedComparisonSimulateTimeStep(float timeStep);
 	static void TW_CALL startMeasure(void * pi_pMyClass);
 
 private:
@@ -48,6 +47,7 @@ private:
 	int						m_iAccelerator;
 	SphereSystem*	m_pSphereSystem;
 	SphereSystem*	m_pSphereSystemGrid;
+	SphereSystem*	m_pSphereSystemmeasure;
 	static				std::function<float(float)> m_Kernels[5];
 	Vec3				m_v3ShiftingLeft  = Vec3(-0.8f, 0.0f, 0.0f);
 	Vec3				m_v3ShiftingRight = Vec3(0.8f, 0.0f, 0.0f);

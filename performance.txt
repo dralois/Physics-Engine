@@ -1,0 +1,37 @@
+For all tests: time step is 0.001, time unit for all time is second
+
+
+
+For only 1 time step:
+
+			detection method:	elapsed time:
+number of balls: 100	     naive		   0.018
+			   accelerated		   0.006
+
+number of balls: 1000	     naive		   1.774
+			   accelerated		   0.062
+
+number of balls: 10000	     naive		   162.881
+			   accelerated		   0.657
+
+
+
+For 30 time steps:
+
+			detection method:	elapsed time:
+number of balls: 100	     naive		   0.486
+			   accelerated		   0.154
+
+number of balls: 1000	     naive		   45.451
+			   accelerated		   1.637
+
+number of balls: 10000	no result cause no one wants to want half an hour or maybe longer
+
+
+PS: Two screenshots are also uploaded in the repository.
+
+
+
+
+
+					

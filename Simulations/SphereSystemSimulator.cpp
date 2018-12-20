@@ -116,9 +116,12 @@ void SphereSystemSimulator::speedComparisonSimulateTimeStep2(float timeStep)
 void SphereSystemSimulator::speedComparison() 
 {
 	// time step ist 0.001 Sekunde, die Anzahl davon ist 30, und Anzahl von Balls ist n
-	int timeSteps = 10;
+	int timeSteps = 30;
 	float timeStep = 0.001f;
 	int n = 0;
+	cout << "time step:              " << timeStep << endl;
+	cout << "number of time steps:   " << timeSteps << endl;
+	cout << "unit of time:           " << "second" << endl << endl;
 
 	// für n = 100, naive collision detection
 	n = 100;
@@ -174,6 +177,12 @@ void SphereSystemSimulator::speedComparison()
 
 	// für n = 10000, naive collision detection
 	n = 10000;
+	// Glaub niemand möchte darauf warten...
+	if (timeSteps > 2)
+	{
+		cout << "won't run the detection for number of time steps " << timeSteps << endl;
+		return;
+	}
 	delete m_pSphereSystem;
 	m_pSphereSystem = new SphereSystem(NAIVEACC, n, m_fRadius, m_fMass, m_fDamping,
 		m_fForceScaling, m_fGravity, m_v3ShiftingLeft);
@@ -270,7 +279,6 @@ void SphereSystemSimulator::notifyCaseChanged(int testCase)
 	{
 		// case 3 für Speed Comparison ohne Grafikanzeige
 		cout << "Demo 3 Speed Comparison without display!" << endl;
-		cout << "time step = 0.001, number of time steps = 10" << endl;
 		speedComparison();
 		break;
 	}

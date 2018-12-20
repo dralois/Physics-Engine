@@ -110,7 +110,19 @@ void SphereSystem::X_ApplyCollision(Ball & ball1, Ball & ball2, function<float(f
 	}
 }
 
+// Startet Performance Messung
+void SphereSystem::X_StartMeasure()
+{
+	// Hier Implementieren
+}
+
 #pragma endregion
+
+// Statische Call Funktion (Eingabe muss Klasseninstanz sein!)
+void TW_CALL SphereSystem::startMeasure(void * pi_pMyClass)
+{
+	((SphereSystem*)pi_pMyClass)->X_StartMeasure();
+}
 
 // Rendert Bälle in übergebener Farbe
 void SphereSystem::drawFrame(DrawingUtilitiesClass* DUC, const Vec3& v3Color)
@@ -135,7 +147,6 @@ void SphereSystem::externalForcesCalculations(float timeElapsed, Vec3 v3MouseFor
 
 		ball->ForceTilde += Vec3(0, -1.0f * m_fGravity * ball->Mass, 0);
 		ball->ForceTilde += v3MouseForce;
-		// Damping für Midpoint muss man später berechnen, da man braucht noch Midpoint Velocity
 	}
 }
 

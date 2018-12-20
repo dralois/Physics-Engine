@@ -29,6 +29,7 @@ public:
 	void simulateTimestep(float timeStep);
 	void simulateHalfTimestep(float timeStep);
 	void collisionResolve(function<float(float)> & kernel, float fScaler);
+	static void TW_CALL startMeasure(void * pi_pMyClass);
 private:
 	// Attributes
 	vector<Ball>m_Balls;
@@ -50,6 +51,7 @@ private:
 	// Functions
 	vector<int> X_SortBalls();
 	vector<int> X_CheckNeighbors(int pi_iCell);
+	void X_StartMeasure();
 	void X_ApplyBoundingBox(Ball& ball);
 	void X_ApplyCollision(Ball& ball1, Ball& ball2, function<float(float)> & kernel, float fScaler);
 };

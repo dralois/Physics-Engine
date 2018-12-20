@@ -88,12 +88,7 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 		TwAddVarRW(DUC->g_pTweakBar, "Force Scale", TW_TYPE_FLOAT, &m_fForceScaling, "min=1.00 step=5.00");
 		TwAddVarRW(DUC->g_pTweakBar, "Damping", TW_TYPE_FLOAT, &m_fDamping, "min=0.00 step=0.10");
 		TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "min=0.00 step=0.10");
-		// Entsprechend abändern
-		TwAddButton(DUC->g_pTweakBar, "TODO Demo 3", &(m_pSphereSystem->startMeasure), m_pSphereSystem, NULL);
-		break;
-	case 3:
-		// case 3 für Speed Comparison ohne Grafikanzeige
-		TwAddVarRW(DUC->g_pTweakBar, "See CMD", TW_TYPE_INT32, &m_iCase3, "min=0 step=0");
+		TwAddButton(DUC->g_pTweakBar, "Demo 3: Measure Performance", &(startMeasure), this, NULL);
 		break;
 	default:
 		break;
@@ -111,6 +106,11 @@ void SphereSystemSimulator::speedComparisonSimulateTimeStep2(float timeStep)
 	m_pSphereSystemGrid->simulateHalfTimestep(timeStep);
 	m_pSphereSystemGrid->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
 	m_pSphereSystemGrid->simulateTimestep(timeStep);
+}
+
+void TW_CALL SphereSystemSimulator::startMeasure(void * pi_pMyClass)
+{
+	((SphereSystemSimulator*)pi_pMyClass)->speedComparison();
 }
 
 void SphereSystemSimulator::speedComparison() 
@@ -240,9 +240,6 @@ void SphereSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext
 	case 2:
 		m_pSphereSystem->drawFrame(DUC, Vec3(1.0f, 0.0f, 0.0f));
 		m_pSphereSystemGrid->drawFrame(DUC, Vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 3:
-		// case 3 für Speed Comparison ohne Grafikanzeige
 		break;
 	default:
 		break;

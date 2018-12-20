@@ -26,6 +26,7 @@ public:
 	void speedComparison();
 	void speedComparisonSimulateTimeStep1(float timeStep);
 	void speedComparisonSimulateTimeStep2(float timeStep);
+	static void TW_CALL startMeasure(void * pi_pMyClass);
 
 private:
 	// Attributes

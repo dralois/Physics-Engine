@@ -2,8 +2,8 @@
 #define SPHSYSTEMSIMULATOR_h
 
 #include "pch.h"
-
 #include "spheresystem.h"
+#include "ctime"
 
 #define NAIVEACC 0
 #define GRIDACC 1
@@ -23,6 +23,9 @@ public:
 	void simulateTimestep(float timeStep);
 	void onClick(int x, int y);
 	void onMouse(int x, int y);
+	void speedComparison();
+	void speedComparisonSimulateTimeStep1(float timeStep);
+	void speedComparisonSimulateTimeStep2(float timeStep);
 
 private:
 	// Attributes
@@ -32,6 +35,7 @@ private:
 	float			m_fDamping = 0.5f;
 	float			m_fGravity = 9.81f;
 	int				m_iBallNumber = 72;
+	int				m_iCase3 = 0;
 	
 	// UI Attributes
 	Point2D			m_v2Oldtrackmouse;

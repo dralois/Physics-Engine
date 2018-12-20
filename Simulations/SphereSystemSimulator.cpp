@@ -7,7 +7,7 @@
 // Get Testcases
 const char * SphereSystemSimulator::getTestCasesStr()
 {
-	return "Demo 1,Demo 2,Demo 3";
+	return "Demo 1,Demo 2,Demo 3,Demo 3 Speed Comparison";
 }
 
 #pragma endregion
@@ -65,6 +65,9 @@ void SphereSystemSimulator::X_SetupDemo()
 			m_pSphereSystemGrid = new SphereSystem(GRIDACC, m_iBallNumber, m_fRadius, m_fMass, m_fDamping, 
 													m_fForceScaling, m_fGravity, m_v3ShiftingRight);
 			break;
+		case 3:
+			// case 3 für Speed Comparison ohne Grafikanzeige
+			break;
 		default:
 			break;
 	}
@@ -86,9 +89,113 @@ void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 		TwAddVarRW(DUC->g_pTweakBar, "Damping", TW_TYPE_FLOAT, &m_fDamping, "min=0.00 step=0.10");
 		TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "min=0.00 step=0.10");
 		break;
+	case 3:
+		// case 3 für Speed Comparison ohne Grafikanzeige
+		TwAddVarRW(DUC->g_pTweakBar, "See CMD", TW_TYPE_INT32, &m_iCase3, "min=0 step=0");
+		break;
 	default:
 		break;
 	}
+}
+void SphereSystemSimulator::speedComparisonSimulateTimeStep1(float timeStep)
+{
+	m_pSphereSystem->simulateHalfTimestep(timeStep);
+	m_pSphereSystem->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
+	m_pSphereSystem->simulateTimestep(timeStep);
+}
+
+void SphereSystemSimulator::speedComparisonSimulateTimeStep2(float timeStep)
+{
+	m_pSphereSystemGrid->simulateHalfTimestep(timeStep);
+	m_pSphereSystemGrid->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
+	m_pSphereSystemGrid->simulateTimestep(timeStep);
+}
+
+void SphereSystemSimulator::speedComparison() 
+{
+	// time step ist 0.001 Sekunde, die Anzahl davon ist 30, und Anzahl von Balls ist n
+	int timeSteps = 30;
+	float timeStep = 0.001f;
+	int n = 0;
+
+	// für n = 100, naive collision detection
+	n = 100;
+	m_pSphereSystem = new SphereSystem(NAIVEACC, n, m_fRadius, m_fMass, m_fDamping,
+		m_fForceScaling, m_fGravity, m_v3ShiftingLeft);
+	clock_t begin100_1 = clock();
+	for (int i = 0; i < timeSteps; i++) 
+	{
+		speedComparisonSimulateTimeStep1(timeStep);
+	}
+	clock_t end100_1 = clock();
+	double elapsed_secs100_1 = double(end100_1 - begin100_1) / CLOCKS_PER_SEC;
+	cout << "n = 100 with naive collision detection:       " << elapsed_secs100_1 << endl;
+
+	// für n = 100, accelerated collision detection
+	m_pSphereSystemGrid = new SphereSystem(GRIDACC, n, m_fRadius, m_fMass, m_fDamping,
+		m_fForceScaling, m_fGravity, m_v3ShiftingRight);
+	clock_t begin100_2 = clock();
+	for (int i = 0; i < timeSteps; i++)
+	{
+		speedComparisonSimulateTimeStep2(timeStep);
+	}
+	clock_t end100_2 = clock();
+	double elapsed_secs100_2 = double(end100_2 - begin100_2) / CLOCKS_PER_SEC;
+	cout << "n = 100 with accelerated collision detection: " << elapsed_secs100_2 << endl << endl;
+
+	// für n = 1000, naive collision detection
+	n = 1000;
+	delete m_pSphereSystem;
+	m_pSphereSystem = new SphereSystem(NAIVEACC, n, m_fRadius, m_fMass, m_fDamping,
+		m_fForceScaling, m_fGravity, m_v3ShiftingLeft);
+	clock_t begin1000_1 = clock();
+	for (int i = 0; i < timeSteps; i++)
+	{
+		speedComparisonSimulateTimeStep1(timeStep);
+	}
+	clock_t end1000_1 = clock();
+	double elapsed_secs1000_1 = double(end1000_1 - begin1000_1) / CLOCKS_PER_SEC;
+	cout << "n = 1000 with naive collision detection:       " << elapsed_secs1000_1 << endl;
+
+	// für n = 1000, accelerated collision detection
+	delete m_pSphereSystemGrid;
+	m_pSphereSystemGrid = new SphereSystem(GRIDACC, n, m_fRadius, m_fMass, m_fDamping,
+		m_fForceScaling, m_fGravity, m_v3ShiftingRight);
+	clock_t begin1000_2 = clock();
+	for (int i = 0; i < timeSteps; i++)
+	{
+		speedComparisonSimulateTimeStep2(timeStep);
+	}
+	clock_t end1000_2 = clock();
+	double elapsed_secs1000_2 = double(end1000_2 - begin1000_2) / CLOCKS_PER_SEC;	
+	cout << "n = 1000 with accelerated collision detection: " << elapsed_secs1000_2 << endl << endl;
+
+	// für n = 10000, naive collision detection
+	n = 10000;
+	delete m_pSphereSystem;
+	m_pSphereSystem = new SphereSystem(NAIVEACC, n, m_fRadius, m_fMass, m_fDamping,
+		m_fForceScaling, m_fGravity, m_v3ShiftingLeft);
+	clock_t begin10000_1 = clock();
+	for (int i = 0; i < timeSteps; i++)
+	{
+		speedComparisonSimulateTimeStep1(timeStep);
+	}
+	clock_t end10000_1 = clock();
+	double elapsed_secs10000_1 = double(end10000_1 - begin10000_1) / CLOCKS_PER_SEC;
+	cout << "n = 10000 with naive collision detection:       " << elapsed_secs10000_1 << endl;
+
+	// für n = 10000, accelerated collision detection
+	delete m_pSphereSystemGrid;
+	m_pSphereSystemGrid = new SphereSystem(GRIDACC, n, m_fRadius, m_fMass, m_fDamping,
+		m_fForceScaling, m_fGravity, m_v3ShiftingRight);
+	clock_t begin10000_2 = clock();
+	for (int i = 0; i < timeSteps; i++)
+	{
+		speedComparisonSimulateTimeStep2(timeStep);
+	}
+	clock_t end10000_2 = clock();
+	double elapsed_secs10000_2 = double(end10000_2 - begin10000_2) / CLOCKS_PER_SEC;
+	cout << "n = 10000 with accelerated collision detection: " << elapsed_secs10000_2 << endl << endl;
 }
 
 // Setzte Simulation zurück
@@ -123,6 +230,9 @@ void SphereSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext
 		m_pSphereSystem->drawFrame(DUC, Vec3(1.0f, 0.0f, 0.0f));
 		m_pSphereSystemGrid->drawFrame(DUC, Vec3(0.0f, 1.0f, 0.0f));
 		break;
+	case 3:
+		// case 3 für Speed Comparison ohne Grafikanzeige
+		break;
 	default:
 		break;
 	}
@@ -152,6 +262,13 @@ void SphereSystemSimulator::notifyCaseChanged(int testCase)
 	case 2:
 	{
 		cout << "Demo 3!" << endl;
+		break;
+	}
+	case 3:
+	{
+		// case 3 für Speed Comparison ohne Grafikanzeige
+		cout << "Demo 3 Speed Comparison without display!" << endl;
+		speedComparison();
 		break;
 	}
 	default:
@@ -202,6 +319,9 @@ void SphereSystemSimulator::simulateTimestep(float timeStep)
 		m_pSphereSystemGrid->simulateHalfTimestep(timeStep);
 		m_pSphereSystemGrid->collisionResolve(m_Kernels[m_iKernel], m_fForceScaling);
 		m_pSphereSystemGrid->simulateTimestep(timeStep);
+		break;
+	case 3:
+		// case 3 für Speed Comparison ohne Grafikanzeige
 		break;
 	default:
 		break;

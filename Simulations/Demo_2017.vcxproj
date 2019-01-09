@@ -240,6 +240,7 @@
     </ClCompile>
     <ClCompile Include="SphereSystem.cpp" />
     <ClCompile Include="SphereSystemSimulator.cpp" />
+    <ClCompile Include="SPHSystemSimulator.cpp" />
     <ClCompile Include="TemplateSimulator.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -268,6 +269,7 @@
     <ClInclude Include="Simulator.h" />
     <ClInclude Include="SphereSystem.h" />
     <ClInclude Include="SphereSystemSimulator.h" />
+    <ClInclude Include="SPHSystemSimulator.h" />
     <ClInclude Include="TemplateSimulator.h" />
     <ClInclude Include="util\FFmpeg.h" />
     <ClInclude Include="util\matrixbase.h" />

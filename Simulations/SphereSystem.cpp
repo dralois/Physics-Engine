@@ -29,14 +29,14 @@ vector<int> SphereSystem::X_SortBalls()
 	return notEmpty;
 }
 
-// überprüfe Zellennachbarn auf Kollisionen
+// Überprüfe Zellennachbarn auf Kollisionen
 vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 {
 	vector<int> neighbors;
 	// Index berechnen
 	int cellX = pi_iCell % m_iGridWidth;
 	int cellY = pi_iCell / m_iGridWidth;
-	// überprüfe Nachbarn
+	// Überprüfe Nachbarn
 	for(int x = -1; x < 2; x++)
 	{
 		for(int y = -1; y < 2; y++)
@@ -44,7 +44,6 @@ vector<int> SphereSystem::X_CheckNeighbors(int pi_iCell)
 			// Randfälle behandeln
 			if (cellX + x < 0 || cellX + x >= m_iGridWidth)
 				continue;
-			// m_GridOccupation.size() / m_iGridWidth ist eigentlich gleich m_iGridWidth da Quadrat
 			if (cellY + y < 0 || cellY + y >= m_iGridWidth)
 				continue;
 			// Speichere alle Nachbarn in Array

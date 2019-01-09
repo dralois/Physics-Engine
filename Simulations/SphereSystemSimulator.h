@@ -1,5 +1,5 @@
-#ifndef SPHSYSTEMSIMULATOR_h
-#define SPHSYSTEMSIMULATOR_h
+#ifndef SPHERESYSTEMSIMULATOR_h
+#define SPHERESYSTEMSIMULATOR_h
 
 #include "pch.h"
 #include "spheresystem.h"

@@ -3,17 +3,21 @@
 #include "pch.h"
 #include "spheresystem.h"
 
-#define MAXCOUNT 10
+#define MAXCOUNT 20
+#define PARTICLECOUNT 200
+#define KERNELRADIUS 1.0f
+#define GRIDRADIUS 0.1f
+#define PARTICLEMASS 1.0f
+#define FLUIDSTIFFNESS 1.0f
+#define RESTDENSITY 3.0f
 
 struct Particle
 {
 	Vec3 Position;
-	Vec3 PositionTilde;
 	Vec3 Velocity;
 	Vec3 Force;
-	Vec3 ForceTilde;
-	float Mass;
-	float Radius;
+	float Density;
+	float Pressure;
 };
 
 class SPHSystemSimulator:public Simulator
@@ -22,6 +26,7 @@ public:
 	// Construtors
 	SPHSystemSimulator();
 	~SPHSystemSimulator();
+
 	// Functions
 	const char * getTestCasesStr();
 	void initUI(DrawingUtilitiesClass * DUC);
@@ -34,12 +39,11 @@ public:
 	void onMouse(int x, int y);
 private:
 	// Attributes
-	float					m_fGravity = 9.81f;
-	int						m_iBallNumber = 72;
-	vector<Particle>	m_Balls;
-	Vec3				m_v3BoxSize;
-	Vec3				m_v3BoxPos;
-	Vec3				m_v3Shifting;
+	vector<Particle>	m_Particles;
+	float							m_fGravity = 9.81f;
+	Vec3							m_v3BoxSize;
+	Vec3							m_v3BoxPos;
+	Vec3							m_v3Shifting;
 
 	// UI Attributes
 	Point2D			m_v2Oldtrackmouse;
@@ -47,14 +51,16 @@ private:
 	Point2D			m_v2Mouse;
 
 	// Other
-	vector<Particle*>	m_GridAccelerator;
-	vector<int>		m_GridOccupation;
+	vector<Particle*>	m_ParticleGrid;
+	vector<int>		m_GridOcc;
 	int						m_iGridWidth;
+	static				std::function<float(Vec3, Vec3)> m_W;
+	static				std::function<Vec3(Vec3, Vec3)> m_Nabla;
 
 	//Functions
 	void	X_SetupDemo();
 	vector<int> X_SortBalls();
-	vector<int> X_CheckNeighbors(int pi_iCell);
+	vector<int> X_CheckNeighbors(int pi_iCell, int pi_iNeighborRadius);
 	void X_ApplyBoundingBox(Particle& ball);
+	void X_CalcPressureForce();
 };
-

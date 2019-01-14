@@ -36,7 +36,7 @@ void SphereSystemSimulator::onMouse(int x, int y)
 
 #pragma region Internal
 
-// Kernel Funktion
+// Kernel Funktionen
 std::function<float(float)> SphereSystemSimulator::m_Kernels[5] = {
 	[](float x) {return 1.0f; },									// Constant, m_iKernel = 0
 	[](float x) {return 1.0f - x; },							// Linear, m_iKernel = 1, as given in the exercise Sheet, x = d/2r
@@ -72,25 +72,7 @@ void SphereSystemSimulator::X_SetupDemo()
 
 #pragma endregion
 
-// Initialisiere UI je nach Demo
-void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
-{
-	this->DUC = DUC;
-	switch (m_iTestCase)
-	{
-	case 0:
-	case 1:
-	case 2:
-		TwAddVarRW(DUC->g_pTweakBar, "Number of Balls", TW_TYPE_INT32, &m_iBallNumber, "min=32 step=10");
-		TwAddVarRW(DUC->g_pTweakBar, "Force Scale", TW_TYPE_FLOAT, &m_fForceScaling, "min=1.00 step=5.00");
-		TwAddVarRW(DUC->g_pTweakBar, "Damping", TW_TYPE_FLOAT, &m_fDamping, "min=0.00 step=0.10");
-		TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "min=0.00 step=0.10");
-		TwAddButton(DUC->g_pTweakBar, "Demo 3: Measure Performance (Reset Scene after)", &(startMeasure), this, NULL);
-		break;
-	default:
-		break;
-	}
-}
+#pragma region Speed Measure
 
 void SphereSystemSimulator::speedComparisonSimulateTimeStep(float timeStep)
 {
@@ -99,13 +81,12 @@ void SphereSystemSimulator::speedComparisonSimulateTimeStep(float timeStep)
 	m_pSphereSystemmeasure->simulateTimestep(timeStep);
 }
 
-
 void TW_CALL SphereSystemSimulator::startMeasure(void * pi_pMyClass)
 {
 	((SphereSystemSimulator*)pi_pMyClass)->speedComparison();
 }
 
-void SphereSystemSimulator::speedComparison() 
+void SphereSystemSimulator::speedComparison()
 {
 	// time step ist 0.001 Sekunde, die Anzahl davon ist 30, und Anzahl von Balls ist n
 	int timeSteps = 10;
@@ -120,7 +101,7 @@ void SphereSystemSimulator::speedComparison()
 	m_pSphereSystemmeasure = new SphereSystem(NAIVEACC, n, m_fRadius, m_fMass, m_fDamping,
 		m_fForceScaling, m_fGravity, m_v3ShiftingLeft);
 	clock_t begin100_1 = clock();
-	for (int i = 0; i < timeSteps; i++) 
+	for (int i = 0; i < timeSteps; i++)
 	{
 		speedComparisonSimulateTimeStep(timeStep);
 	}
@@ -159,13 +140,13 @@ void SphereSystemSimulator::speedComparison()
 	delete m_pSphereSystemmeasure;
 	m_pSphereSystemmeasure = new SphereSystem(GRIDACC, n, m_fRadius, m_fMass, m_fDamping,
 		m_fForceScaling, m_fGravity, m_v3ShiftingRight);
- 	clock_t begin1000_2 = clock();
+	clock_t begin1000_2 = clock();
 	for (int i = 0; i < timeSteps; i++)
 	{
 		speedComparisonSimulateTimeStep(timeStep);
 	}
 	clock_t end1000_2 = clock();
-	double elapsed_secs1000_2 = double(end1000_2 - begin1000_2) / CLOCKS_PER_SEC;	
+	double elapsed_secs1000_2 = double(end1000_2 - begin1000_2) / CLOCKS_PER_SEC;
 	cout << "n = 1000 with accelerated collision detection: " << elapsed_secs1000_2 << endl << endl;
 
 	// für n = 10000, naive collision detection
@@ -203,6 +184,28 @@ void SphereSystemSimulator::speedComparison()
 	double elapsed_secs10000_2 = double(end10000_2 - begin10000_2) / CLOCKS_PER_SEC;
 	cout << "n = 10000 with accelerated collision detection: " << elapsed_secs10000_2 << endl << endl;
 	delete m_pSphereSystemmeasure;
+}
+
+#pragma endregion
+
+// Initialisiere UI je nach Demo
+void SphereSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
+{
+	this->DUC = DUC;
+	switch (m_iTestCase)
+	{
+	case 0:
+	case 1:
+	case 2:
+		TwAddVarRW(DUC->g_pTweakBar, "Number of Balls", TW_TYPE_INT32, &m_iBallNumber, "min=32 step=10");
+		TwAddVarRW(DUC->g_pTweakBar, "Force Scale", TW_TYPE_FLOAT, &m_fForceScaling, "min=1.00 step=5.00");
+		TwAddVarRW(DUC->g_pTweakBar, "Damping", TW_TYPE_FLOAT, &m_fDamping, "min=0.00 step=0.10");
+		TwAddVarRW(DUC->g_pTweakBar, "Gravity", TW_TYPE_FLOAT, &m_fGravity, "min=0.00 step=0.10");
+		TwAddButton(DUC->g_pTweakBar, "Demo 3: Measure Performance (Reset Scene after)", &(startMeasure), this, NULL);
+		break;
+	default:
+		break;
+	}
 }
 
 // Setzte Simulation zurück

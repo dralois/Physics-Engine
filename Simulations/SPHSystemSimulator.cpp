@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "SPHSystemSimulator.h"
 
 #pragma region Properties
@@ -13,7 +13,7 @@ const char * SPHSystemSimulator::getTestCasesStr()
 
 #pragma region Events
 
-// Mausbewegung während Klicken
+// Mausbewegung wÃ¤hrend Klicken
 void SPHSystemSimulator::onClick(int x, int y)
 {
 	m_v2Trackmouse.x = x;
@@ -35,7 +35,7 @@ void SPHSystemSimulator::onMouse(int x, int y)
 
 #pragma region Internal
 
-// Glättungsoperator W
+// Was ist dieser Umlaut??? Glé‹žtungsoperator W
 std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 {
 	float q = norm(x - xi) / (0.5f * KERNELRADIUS);
@@ -86,7 +86,7 @@ void SPHSystemSimulator::X_SetupDemo()
 	m_iGridWidth = gridDim;
 	m_GridOcc.resize(gridDim * gridDim);
 	m_ParticleGrid.resize(gridDim * gridDim * MAXCOUNT);
-	// Bälle erstellen
+	// BÃ¤llle erstellen
 	for (int i = 0; i < particleCount; i++)
 	{
 		// Zelle berechnen
@@ -111,17 +111,17 @@ void SPHSystemSimulator::X_SetupDemo()
 	}
 }
 
-// Sortiert alle Bälle in ensprechende Zellen ein
+// Sortiert alle BÃ¤lle in ensprechende Zellen ein
 vector<int> SPHSystemSimulator::X_SortBalls()
 {
 	vector<int> notEmpty;
-	// Alle Bälle sortieren
+	// Alle BÃ¤lle sortieren
 	for (auto ball = m_Particles.begin(); ball != m_Particles.end(); ball++)
 	{
 		int x = fminf(floorf(ball->Position.x / (GRIDRADIUS * 2.0f)), (m_iGridWidth - 1) * 1.0f);
 		int y = fminf(floorf(ball->Position.z / (GRIDRADIUS * 2.0f)), (m_iGridWidth - 1) * 1.0f);
 		int index = ((y * m_iGridWidth) + x);
-		// In passender Zelle speichern falls möglich
+		// In passender Zelle speichern falls mÃ¶glich
 		if (m_GridOcc[index] < MAXCOUNT)
 		{
 			m_ParticleGrid[(index * MAXCOUNT) + m_GridOcc[index]++] = &*ball;
@@ -130,23 +130,23 @@ vector<int> SPHSystemSimulator::X_SortBalls()
 				notEmpty.push_back(index);
 		}
 	}
-	// Gebe belegte Zellen zurück
+	// Gebe belegte Zellen zurÃ¼ck
 	return notEmpty;
 }
 
-// Überprüfe Zellennachbarn auf Überschneidungen
+// Ã¼berprÃ¼fe Zellennachbarn auf Ãœberschneidungen
 vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborRadius)
 {
 	vector<int> neighbors;
 	// Index berechnen
 	int cellX = pi_iCell % m_iGridWidth;
 	int cellY = pi_iCell / m_iGridWidth;
-	// Überprüfe Nachbarn
+	// Ã¼berprÃ¼fe Nachbarn
 	for (int x = -pi_iNeighborRadius; x <= pi_iNeighborRadius; x++)
 	{
 		for (int y = -pi_iNeighborRadius; y <= pi_iNeighborRadius; y++)
 		{
-			// Randfälle behandeln
+			// RandfÃ¤lle behandeln
 			if (cellX + x < 0 || cellX + x >= m_iGridWidth)
 				continue;
 			if (cellY + y < 0 || cellY + y >= m_iGridWidth)
@@ -156,14 +156,14 @@ vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborR
 			neighbors.push_back(index);
 		}
 	}
-	// Gebe Nachbarnliste zurück
+	// Gebe Nachbarnliste zurÃ¼ck
 	return neighbors;
 }
 
-// Bälle dürfen Box nicht verlassen
+// BÃ¤lle dÃ¼rfen Box nicht verlassen
 void SPHSystemSimulator::X_ApplyBoundingBox(Particle & particle)
 {
-	// Positive Richtung clampen und Ball zurückspringen
+	// Positive Richtung clampen und Ball zurÃ¼ckspringen
 	if (particle.Position.x > m_v3BoxSize.x)
 	{
 		particle.Position.x = m_v3BoxSize.x;
@@ -195,7 +195,7 @@ void SPHSystemSimulator::X_ApplyBoundingBox(Particle & particle)
 // Druckkraft berechnen
 void SPHSystemSimulator::X_CalcPressureForce()
 {
-	// Grid zurücksetzen
+	// Grid zurÃ¼cksetzen
 	for (int i = 0; i < m_GridOcc.size(); i++)
 	{
 		m_GridOcc[i] = 0;
@@ -253,7 +253,7 @@ void SPHSystemSimulator::X_CalcPressureForce()
 				for (int currNeighbor = 0; currNeighbor < m_GridOcc[neighbors[currNeighborCell]]; currNeighbor++)
 				{
 					int neighborParticle = (neighbors[currNeighborCell] * MAXCOUNT) + currNeighbor;
-					// Überspringe Interaktion mit selbst
+					// Ã¼berspringe Interaktion mit selbst
 					if (ownParticle == neighborParticle)
 						continue;
 					// Druckkraft bestimmen
@@ -276,7 +276,7 @@ void SPHSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 	this->DUC = DUC;
 }
 
-// Setzte Simulation zurück
+// Setzte Simulation zurÃ¼ck
 void SPHSystemSimulator::reset()
 {
 	m_v3BoxPos = m_v3BoxSize = m_v3Shifting = Vec3(0.0f);
@@ -293,7 +293,7 @@ void SPHSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 {
 	// Farbe einrichten
 	DUC->setUpLighting(Vec3(), 0.6f*Vec3(1.0f), 100.0f, Vec3(0,0,1));
-	// Bälle rendern
+	// BÃ¤lle rendern
 	for (auto ball = m_Particles.begin(); ball != m_Particles.end(); ball++)
 	{
 		DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(GRIDRADIUS));
@@ -303,13 +303,13 @@ void SPHSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 // Aktiviere verschiedene Simulationen
 void SPHSystemSimulator::notifyCaseChanged(int testCase)
 {
-	// Setzte Simulation zurück
+	// Setzte Simulation zurÃ¼ck
 	reset();
 	// Erstelle Szene
 	X_SetupDemo();
 }
 
-// Externe Kräfte updaten
+// Externe KrÃ¤fte updaten
 void SPHSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
 	Point2D mouseDiff;
@@ -317,10 +317,10 @@ void SPHSystemSimulator::externalForcesCalculations(float timeElapsed)
 	// Berechne Differenz
 	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
 	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
-	// Falls linke Maustaste gedrückt
+	// Falls linke Maustaste gedrÃ¼ckt
 	if (mouseDiff.x != 0 || mouseDiff.y != 0)
 	{
-		// Berechne benötigte Matrix
+		// Berechne benÃ¶tigte Matrix
 		Mat4 worldViewInv = Mat4(DUC->g_camera.GetWorldMatrix() * DUC->g_camera.GetViewMatrix()).inverse();
 		// Vektor bestehend aus Mausverschiebung
 		Vec3 inputView = Vec3((float)-mouseDiff.x, (float)mouseDiff.y, 0);
@@ -345,7 +345,7 @@ void SPHSystemSimulator::simulateTimestep(float timeStep)
 	{
 		particle->Velocity += timeStep * (particle->Force / PARTICLEMASS);
 		particle->Position += timeStep * particle->Velocity;
-		// Zurücksetzen
+		// ZurÃ¼cksetzen
 		particle->Density = particle->Pressure = 0.0f;
 		// Als letztes Position clampen
 		X_ApplyBoundingBox(*particle);
@@ -361,13 +361,13 @@ SPHSystemSimulator::SPHSystemSimulator()
 {
 	srand(time(NULL));
 	m_iTestCase = 0;
-	// Setzte Simulation zurück
+	// Setzte Simulation zurÃ¼ck
 	reset();
 	// Erstelle Szene
 	X_SetupDemo();
 }
 
-// Aufräumen
+// AufrÃ¤umen
 SPHSystemSimulator::~SPHSystemSimulator()
 {
 	if (m_ParticleGrid.size() > 0)

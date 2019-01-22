@@ -38,7 +38,7 @@ void SPHSystemSimulator::onMouse(int x, int y)
 // Smooth function W
 std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 {
-	// Wichtig! KERNELRADIUS ist nur ein halb Halbmesser
+	// Wichtig! KERNELRADIUS ist gleich Halbmesser von den Bällen
 	float q = norm(x - xi) / (0.5f * KERNELRADIUS);
 	float factor = 1.5f / (powf(KERNELRADIUS, 3.0f) *PI);
 	if (q >= 0.0f && q < 1.0f)
@@ -132,7 +132,7 @@ vector<int> SPHSystemSimulator::X_SortBalls()
 		if (m_GridOcc[index] < MAXCOUNT)
 		{
 			m_ParticleGrid[(index * MAXCOUNT) + m_GridOcc[index]++] = &*ball;
-			// Belegten Index ggf. speichern
+			// Wenn index noch nicht in notEmpty gespeichert ist...
 			if (find(notEmpty.begin(), notEmpty.end(), index) == notEmpty.end())
 				notEmpty.push_back(index);
 		}
@@ -142,7 +142,7 @@ vector<int> SPHSystemSimulator::X_SortBalls()
 }
 
 // überprüfe Zellennachbarn auf Überschneidungen
-vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborRadius)
+vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborRadius, vector<int> notEmpty)
 {
 	vector<int> neighbors;
 	// Index berechnen
@@ -160,7 +160,10 @@ vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborR
 				continue;
 			// Speichere alle Nachbarn in Array
 			int index = ((cellY + y) * m_iGridWidth) + (cellX + x);
-			neighbors.push_back(index);
+
+			// Nur wenn die Nachbarzelle nicht leer ist
+			if (find(notEmpty.begin(), notEmpty.end(), index) == notEmpty.end())
+				neighbors.push_back(index);
 		}
 	}
 	// Gebe Nachbarnliste zurück
@@ -174,28 +177,68 @@ void SPHSystemSimulator::X_ApplyBoundingBox(Particle & particle)
 	if (particle.Position.x > m_v3BoxSize.x)
 	{
 		particle.Position.x = m_v3BoxSize.x;
+		particle.Velocity.x = -0.5f * particle.Velocity.x;
 	}
 	if (particle.Position.y > m_v3BoxSize.y)
 	{
 		particle.Position.y = m_v3BoxSize.y;
+		particle.Velocity.y = -0.1f * particle.Velocity.y;
 	}
 	if (particle.Position.z > m_v3BoxSize.z)
 	{
 		particle.Position.z = m_v3BoxSize.z;
+		particle.Velocity.z = -0.5f * particle.Velocity.z;
 	}
 
 	// Negative Richtung clampen
 	if (particle.Position.x < 0.0f)
 	{
 		particle.Position.x = 0.0f;
+		particle.Velocity.x = -0.5f * particle.Velocity.x;
 	}
 	if (particle.Position.y < 0.0f)
 	{
 		particle.Position.y = 0.0f;
+		particle.Velocity.y = -0.1f * particle.Velocity.y;
 	}
 	if (particle.Position.z < 0.0f)
 	{
 		particle.Position.z = 0.0f;
+		particle.Velocity.z = -0.5f * particle.Velocity.z;
+	}
+}
+
+void SPHSystemSimulator::X_CalcPressureForceNaive()
+{
+	// Density
+	for (int ownParticle = 0; ownParticle < m_Particles.size(); ownParticle++)
+	{
+		for (int neighborParticle = 0; neighborParticle < m_Particles.size(); neighborParticle++)
+		{
+			m_Particles[ownParticle].Density += PARTICLEMASS *
+				m_W(m_Particles[ownParticle].Position, m_Particles[neighborParticle].Position);
+		}
+	}
+	// Pressure
+	for (int particle = 0; particle < m_Particles.size(); particle++)
+	{
+		m_Particles[particle].Pressure =
+			FLUIDSTIFFNESS * (powf(m_Particles[particle].Density / RESTDENSITY, 7.0f) - 1.0f);
+	}
+	// Force
+	for (int ownParticle = 0; ownParticle < m_Particles.size(); ownParticle++)
+	{
+		Vec3 pressureForce = Vec3(0.0f);
+		for (int neighborParticle = 0; neighborParticle < m_Particles.size(); neighborParticle++)
+		{
+			if (neighborParticle == ownParticle)
+				continue;
+
+			pressureForce += (PARTICLEMASS / m_Particles[neighborParticle].Density) *
+				((m_Particles[neighborParticle].Pressure + m_Particles[ownParticle].Pressure) / 2.0f) *
+				m_Nabla(m_Particles[ownParticle].Position, m_Particles[neighborParticle].Position);
+		}
+		m_Particles[ownParticle].Force -= pressureForce;
 	}
 }
 
@@ -215,7 +258,9 @@ void SPHSystemSimulator::X_CalcPressureForce()
 	for (int currCell = 0; currCell < toCheck.size(); currCell++)
 	{
 		// Bestimme Nachbarzellen
-		vector<int> neighbors = X_CheckNeighbors(toCheck[currCell], KERNELRADIUS);
+		// KERNELRADIUS ist 1, GRIDRADIUS ist 0.1, d.h. maximal 25 Nachbarzellen
+		// Übrigens, GRIDRADIUS = 0.1 ist eventuell ein schlechter Wert, es soll ein bisschen größer sein...
+		vector<int> neighbors = X_CheckNeighbors(toCheck[currCell], int(KERNELRADIUS / (GRIDRADIUS * 2.0f)), toCheck);
 		for (int currParticle = 0; currParticle < m_GridOcc[toCheck[currCell]]; currParticle++)
 		{
 			for (int currNeighborCell = 0; currNeighborCell < neighbors.size(); currNeighborCell++)
@@ -249,7 +294,7 @@ void SPHSystemSimulator::X_CalcPressureForce()
 	for (int currCell = 0; currCell < toCheck.size(); currCell++)
 	{
 		// Bestimme Nachbarzellen
-		vector<int> neighbors = X_CheckNeighbors(toCheck[currCell], KERNELRADIUS);
+		vector<int> neighbors = X_CheckNeighbors(toCheck[currCell], int(KERNELRADIUS / (GRIDRADIUS * 2.0f)), toCheck);
 		for (int currParticle = 0; currParticle < m_GridOcc[toCheck[currCell]]; currParticle++)
 		{
 			Vec3 pressureForce = Vec3(0.0f);
@@ -304,6 +349,7 @@ void SPHSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 	for (auto ball = m_Particles.begin(); ball != m_Particles.end(); ball++)
 	{
 		DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(GRIDRADIUS));
+		// DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(KERNELRADIUS));
 	}
 }
 
@@ -346,14 +392,18 @@ void SPHSystemSimulator::externalForcesCalculations(float timeElapsed)
 void SPHSystemSimulator::simulateTimestep(float timeStep)
 {
 	// Berechne Druck
-	X_CalcPressureForce();
-	// Aktualisiere Geschwindigkeit/Position (Leap Frog)
+	// X_CalcPressureForce();
+	X_CalcPressureForceNaive();
+	// Aktualisiere Geschwindigkeit/Position (Leap Frog, aber jetzt nur Explizit Euler)
 	for (auto particle = m_Particles.begin(); particle != m_Particles.end(); particle++)
 	{
-		particle->Velocity += timeStep * (particle->Force / PARTICLEMASS);
+		// Zuerst Position aktualisieren, danach Velocity
 		particle->Position += timeStep * particle->Velocity;
+		particle->Velocity += timeStep * (particle->Force / PARTICLEMASS + Vec3(0.0f, -0.2f * m_fGravity, 0.0f));
+		// particle->Velocity += timeStep * (particle->Force / PARTICLEMASS);
 		// Zurücksetzen
 		particle->Density = particle->Pressure = 0.0f;
+		particle->Force = Vec3(0.0f);
 		// Als letztes Position clampen
 		X_ApplyBoundingBox(*particle);
 	}

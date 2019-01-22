@@ -38,14 +38,18 @@ void SPHSystemSimulator::onMouse(int x, int y)
 // Smooth function W
 std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 {
+	// Wichtig! KERNELRADIUS ist nur ein halb Halbmesser
 	float q = norm(x - xi) / (0.5f * KERNELRADIUS);
+	float factor = 1.5f / (powf(KERNELRADIUS, 3.0f) *PI);
 	if (q >= 0.0f && q < 1.0f)
 	{
-		return 0.6666f - powf(q, 2.0f) + (0.5f * powf(q, 3.0f));
+		float unfactored = 0.6666f - powf(q, 2.0f) + (0.5f * powf(q, 3.0f));
+		return factor * unfactored;
 	}
 	else if (q >= 1.0f && q < 2.0f)
 	{
-		return 0.1666f * powf(2.0f - q, 3.0f);
+		float unfactored = 0.1666f * powf(2.0f - q, 3.0f);
+		return factor * unfactored;
 	}
 	else
 	{
@@ -53,18 +57,21 @@ std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 	}
 };
 
-// Nabla Operator \/W
+// Nabla Operator ▽W
 std::function<Vec3(Vec3, Vec3)> SPHSystemSimulator::m_Nabla = [](Vec3 x, Vec3 xi)
 {
 	float q = norm(x - xi) / (0.5f * KERNELRADIUS);
 	Vec3 dist = (x - xi) / norm(x - xi);
+	float factor = 2.25f / (PI * powf(KERNELRADIUS, 5.0f));
 	if (q >= 0.0f && q < 1.0f)
 	{
-		return dist * ((q - 1.3333f) * q * (0.5f * KERNELRADIUS));
+		float unfactored = (q - 1.3333f) * q * (0.5f * KERNELRADIUS);
+		return dist * factor * unfactored;
 	}
 	else if (q >= 1.0f && q < 2.0f)
 	{
-		return dist * (-pow(2.0f - q, 2.0f) * ((KERNELRADIUS * 0.5f) / 3.0f));
+		float unfactored = -pow(2.0f - q, 2.0f) * ((KERNELRADIUS * 0.5f) / 3.0f);
+		return dist * factor * unfactored;
 	}
 	else
 	{

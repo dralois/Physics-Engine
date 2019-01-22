@@ -10,6 +10,7 @@
 #define PARTICLEMASS 1.0f
 #define FLUIDSTIFFNESS 1.0f
 #define RESTDENSITY 3.0f
+#define PI 3.141592653f
 
 struct Particle
 {

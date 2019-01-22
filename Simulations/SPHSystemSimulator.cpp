@@ -35,7 +35,7 @@ void SPHSystemSimulator::onMouse(int x, int y)
 
 #pragma region Internal
 
-// Was ist dieser Umlaut??? Gl鋞tungsoperator W
+// Smooth function W
 std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 {
 	float q = norm(x - xi) / (0.5f * KERNELRADIUS);

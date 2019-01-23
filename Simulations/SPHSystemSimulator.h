@@ -4,9 +4,10 @@
 #include "spheresystem.h"
 
 #define MAXCOUNT 20
-#define PARTICLECOUNT 50
+#define PARTICLECOUNT 128
+// Achtung! GRIDRADIUS soll nicht größer als halb KERNELRADIUS sein!
 #define KERNELRADIUS 1.0f
-#define GRIDRADIUS 0.2f
+#define GRIDRADIUS 0.4f
 #define PARTICLEMASS 1.0f
 #define FLUIDSTIFFNESS 15.0f
 #define RESTDENSITY 3.0f

@@ -83,7 +83,7 @@ std::function<Vec3(Vec3, Vec3)> SPHSystemSimulator::m_Nabla = [](Vec3 x, Vec3 xi
 void SPHSystemSimulator::X_SetupDemo()
 {
 	// Anzahl halbieren
-	int particleCount = PARTICLECOUNT / 2;
+	int particleCount = PARTICLECOUNT / LAYERCOUNT;
 	// Zellenanzahl bestimmen
 	int gridDim = ceil(sqrtf(particleCount));
 	// Als Box speichern
@@ -94,27 +94,22 @@ void SPHSystemSimulator::X_SetupDemo()
 	m_GridOcc.resize(gridDim * gridDim);
 	m_ParticleGrid.resize(gridDim * gridDim * MAXCOUNT);
 	// Bällle erstellen
-	for (int i = 0; i < particleCount; i++)
+	for (int layer = 0; layer < LAYERCOUNT; layer++)
 	{
-		// Zelle berechnen
-		int cellX = i % gridDim;
-		int cellY = i / gridDim;
-		// Erster Layer
-		Particle newBall;
-		newBall.Density = newBall.Pressure = 0.0f;
-		newBall.Force =  Vec3(0.0f);
-		newBall.Position = Vec3(cellX * GRIDRADIUS * 2.0f + GRIDRADIUS,
-														gridDim * GRIDRADIUS * 2.0f,
-														cellY * GRIDRADIUS * 2.0f + GRIDRADIUS);
-		m_Particles.push_back(newBall);
-		// Zweiter Layer
-		Particle newBall2;
-		newBall2.Density = newBall2.Pressure = 0.0f;
-		newBall2.Force = Vec3(0.0f);
-		newBall2.Position = Vec3(cellX * GRIDRADIUS * 2.0f + GRIDRADIUS,
-														(gridDim - 1) * GRIDRADIUS * 2.0f,
-														cellY * GRIDRADIUS * 2.0f + GRIDRADIUS);
-		m_Particles.push_back(newBall2);
+		for (int i = 0; i < particleCount; i++)
+		{
+			// Zelle berechnen
+			int cellX = i % gridDim;
+			int cellY = i / gridDim;
+			// Erster Layer
+			Particle newBall;
+			newBall.Density = newBall.Pressure = 0.0f;
+			newBall.Force = Vec3(0.0f);
+			newBall.Position = Vec3(cellX * GRIDRADIUS * 2.0f + GRIDRADIUS,
+				(gridDim - layer) * GRIDRADIUS * 2.0f,
+				cellY * GRIDRADIUS * 2.0f + GRIDRADIUS);
+			m_Particles.push_back(newBall);
+		}
 	}
 }
 
@@ -122,12 +117,10 @@ void SPHSystemSimulator::X_SetupDemo()
 vector<int> SPHSystemSimulator::X_SortBalls()
 {
 	// Zuerst vectors aufräumen
-	int particleCount = PARTICLECOUNT / 2;
-	int gridDim = ceil(sqrtf(particleCount));
 	m_GridOcc.clear();
-	m_GridOcc.resize(gridDim * gridDim);
+	m_GridOcc.resize(m_iGridWidth * m_iGridWidth);
 	m_ParticleGrid.clear();
-	m_ParticleGrid.resize(gridDim * gridDim * MAXCOUNT);
+	m_ParticleGrid.resize(m_iGridWidth * m_iGridWidth * MAXCOUNT);
 
 	vector<int> notEmpty;
 	// Alle Bälle sortieren
@@ -231,7 +224,7 @@ void SPHSystemSimulator::X_CalcPressureForceNaive()
 	for (int particle = 0; particle < m_Particles.size(); particle++)
 	{
 		m_Particles[particle].Pressure =
-			FLUIDSTIFFNESS * (powf(m_Particles[particle].Density / RESTDENSITY, 7.0f) - 1.0f);
+			FLUIDSTIFFNESS * (powf(m_Particles[particle].Density / RESTDENSITY, PRESSUREPOWER) - 1.0f);
 	}
 	// Force
 	for (int ownParticle = 0; ownParticle < m_Particles.size(); ownParticle++)
@@ -356,8 +349,8 @@ void SPHSystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateContext)
 	// Bälle rendern
 	for (auto ball = m_Particles.begin(); ball != m_Particles.end(); ball++)
 	{
-		// DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(GRIDRADIUS));
-		DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(KERNELRADIUS));
+		// DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(KERNELRADIUS));
+		DUC->drawSphere(ball->Position + m_v3BoxPos + m_v3Shifting, Vec3(GRIDRADIUS));
 	}
 }
 
@@ -408,8 +401,8 @@ void SPHSystemSimulator::simulateTimestep(float timeStep)
 	{
 		// Zuerst Position aktualisieren, danach Velocity
 		particle->Position += timeStep * particle->Velocity;
-		// particle->Velocity += timeStep * (particle->Force / PARTICLEMASS + Vec3(0.0f, -0.2f * m_fGravity, 0.0f));
-		particle->Velocity += timeStep * (particle->Force / PARTICLEMASS);
+		particle->Velocity += timeStep * (particle->Force / PARTICLEMASS + Vec3(0.0f, -0.5f * m_fGravity, 0.0f));
+		// particle->Velocity += timeStep * (particle->Force / PARTICLEMASS);
 		// Zurücksetzen
 		particle->Density = particle->Pressure = 0.0f;
 		particle->Force = Vec3(0.0f);

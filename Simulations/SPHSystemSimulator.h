@@ -3,15 +3,17 @@
 #include "pch.h"
 #include "spheresystem.h"
 
-#define MAXCOUNT 20
-#define PARTICLECOUNT 128
+#define MAXCOUNT 15
+#define PARTICLECOUNT 144
+#define LAYERCOUNT 4
 // Achtung! GRIDRADIUS soll nicht größer als halb KERNELRADIUS sein!
 #define KERNELRADIUS 1.0f
 #define GRIDRADIUS 0.4f
 #define PARTICLEMASS 1.0f
-#define FLUIDSTIFFNESS 15.0f
-#define RESTDENSITY 3.0f
+#define FLUIDSTIFFNESS 6.0f
+#define RESTDENSITY 5.0f
 #define PI 3.141592653f
+#define PRESSUREPOWER 10.0f
 
 struct Particle
 {

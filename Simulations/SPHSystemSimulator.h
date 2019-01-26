@@ -4,22 +4,29 @@
 #include "spheresystem.h"
 
 #define MAXCOUNT 15
-#define PARTICLECOUNT 144
-#define LAYERCOUNT 4
-// Achtung! GRIDRADIUS soll nicht größer als halb KERNELRADIUS sein!
-#define KERNELRADIUS 1.0f
-#define GRIDRADIUS 0.4f
-#define PARTICLEMASS 1.0f
-#define FLUIDSTIFFNESS 6.0f
-#define RESTDENSITY 5.0f
+#define PARTICLECOUNT 108
+#define LAYERCOUNT 3				// wie viele Schichten von Bällen gibt es
+#define KERNELRADIUS 0.18f		// Achtung! GRIDRADIUS soll nicht größer als halb KERNELRADIUS sein!
+#define GRIDRADIUS 0.082f		// GRIDRADIUS ist auch Halbmesser für Particle
+#define PRESSUREPOWER 7.0f
+#define RESTDENSITY 1.0f
+#define DAMPING 0.4f
+#define MOUSEFORCESCALE 0.3f
 #define PI 3.141592653f
-#define PRESSUREPOWER 10.0f
+#define GRAVITY 9.81f
+// Variablen, die den Effekt stark beeinflussen können
+#define PARTICLEMASS 0.0005f
+#define FLUIDSTIFFNESS 0.0001f
+#define COLLISIONSCALE 8.0f
+
 
 struct Particle
 {
 	Vec3 Position;
 	Vec3 Velocity;
 	Vec3 Force;
+	Vec3 OldPosition;
+	Vec3 OldVelocity;
 	float Density;
 	float Pressure;
 };
@@ -44,10 +51,10 @@ public:
 private:
 	// Attributes
 	vector<Particle>		m_Particles;				// Speichter: alle Bälle
-	float				m_fGravity = 9.81f;
 	Vec3					m_v3BoxSize;
 	Vec3					m_v3BoxPos;
-	Vec3					m_v3Shifting;
+	Vec3					m_v3Shifting = Vec3(0.0f, GRIDRADIUS, 0.0f);
+	Vec3					m_v3MousForce;
 
 	// UI Attributes
 	Point2D				m_v2Oldtrackmouse;
@@ -60,12 +67,15 @@ private:
 	int					m_iGridWidth;
 	static				std::function<float(Vec3, Vec3)> m_W;
 	static				std::function<Vec3(Vec3, Vec3)> m_Nabla;
+	static				std::function<float(float)> m_CollisionKernels[5];
 
 	//Functions
 	void	X_SetupDemo();
 	vector<int> X_SortBalls();
 	vector<int> X_CheckNeighbors(int pi_iCell, int pi_iNeighborRadius, vector<int> notEmpty);
+	void X_ApplyCollision(Particle & p1, Particle & p2, function<float(float)> & kernel, float fScaler);
+	void collisionResolve(function<float(float)> & kernel, float fScaler, vector<int> toCheck);
 	void X_ApplyBoundingBox(Particle& ball);
-	void X_CalcPressureForce();
+	void X_CalcPressureForce(vector<int> toCheck);
 	void X_CalcPressureForceNaive();
 };

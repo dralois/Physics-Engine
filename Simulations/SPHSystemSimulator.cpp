@@ -38,8 +38,9 @@ void SPHSystemSimulator::onMouse(int x, int y)
 // Smooth function W
 std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 {
-	// Wichtig! KERNELRADIUS ist gleich Halbmesser von den Bällen
-	float q = norm(x - xi) / (0.5f * KERNELRADIUS);
+	// Stabilität: Distanz zwischen x und xi ist logischerweise immer größer als GRIDRADIUS
+	float distance = fmaxf(norm(x - xi), 2.0f * GRIDRADIUS);
+	float q = distance / KERNELRADIUS;
 	float factor = 1.5f / (powf(KERNELRADIUS, 3.0f) *PI);
 	if (q >= 0.0f && q < 1.0f)
 	{
@@ -60,23 +61,34 @@ std::function<float(Vec3, Vec3)> SPHSystemSimulator::m_W = [](Vec3 x, Vec3 xi)
 // Nabla Operator ▽W
 std::function<Vec3(Vec3, Vec3)> SPHSystemSimulator::m_Nabla = [](Vec3 x, Vec3 xi)
 {
-	float q = norm(x - xi) / (0.5f * KERNELRADIUS);
-	Vec3 dist = (x - xi) / norm(x - xi);
+	// Stabilität: Distanz zwischen x und xi ist logischerweise immer größer als GRIDRADIUS
+	float distance = fmaxf(norm(x - xi), 2.0f * GRIDRADIUS);
+	float q = distance / KERNELRADIUS;
+	Vec3 dist = (x - xi) / distance;
 	float factor = 2.25f / (PI * powf(KERNELRADIUS, 5.0f));
 	if (q >= 0.0f && q < 1.0f)
 	{
-		float unfactored = (q - 1.3333f) * q * (0.5f * KERNELRADIUS);
+		float unfactored = (q - 1.3333f) * q * KERNELRADIUS;
 		return dist * factor * unfactored;
 	}
 	else if (q >= 1.0f && q < 2.0f)
 	{
-		float unfactored = -pow(2.0f - q, 2.0f) * ((KERNELRADIUS * 0.5f) / 3.0f);
+		float unfactored = -pow(2.0f - q, 2.0f) * KERNELRADIUS / 3.0f;
 		return dist * factor * unfactored;
 	}
 	else
 	{
 		return Vec3(0.0f);
 	}
+};
+
+// Kernel Funktionen
+std::function<float(float)> SPHSystemSimulator::m_CollisionKernels[5] = {
+	[](float x) {return 1.0f; },									// Constant, m_iKernel = 0
+	[](float x) {return 1.0f - x; },							// Linear, m_iKernel = 1, as given in the exercise Sheet, x = d/2r
+	[](float x) {return (1.0f - x)*(1.0f - x); },	// Quadratic, m_iKernel = 2
+	[](float x) {return 1.0f / (x)-1.0f; },				// Weak Electric Charge, m_iKernel = 3
+	[](float x) {return 1.0f / (x*x) - 1.0f; },		// Electric Charge, m_iKernel = 4
 };
 
 // Erstellt Demo Szene
@@ -104,10 +116,10 @@ void SPHSystemSimulator::X_SetupDemo()
 			// Erster Layer
 			Particle newBall;
 			newBall.Density = newBall.Pressure = 0.0f;
-			newBall.Force = Vec3(0.0f);
-			newBall.Position = Vec3(cellX * GRIDRADIUS * 2.0f + GRIDRADIUS,
-				(gridDim - layer) * GRIDRADIUS * 2.0f,
-				cellY * GRIDRADIUS * 2.0f + GRIDRADIUS);
+			newBall.Force = newBall.Velocity = newBall.OldPosition = newBall.OldVelocity = Vec3(0.0f);
+			newBall.Position = Vec3(		cellX * GRIDRADIUS * 2.0f + GRIDRADIUS,
+										layer * GRIDRADIUS * 2.0f,
+										cellY * GRIDRADIUS * 2.0f + GRIDRADIUS);
 			m_Particles.push_back(newBall);
 		}
 	}
@@ -128,6 +140,8 @@ vector<int> SPHSystemSimulator::X_SortBalls()
 	{
 		int x = fminf(floorf(ball->Position.x / (GRIDRADIUS * 2.0f)), (m_iGridWidth - 1) * 1.0f);
 		int y = fminf(floorf(ball->Position.z / (GRIDRADIUS * 2.0f)), (m_iGridWidth - 1) * 1.0f);
+		if (x < 0) x = 0;
+		if (y < 0) y = 0;
 		int index = ((y * m_iGridWidth) + x);
 		// In passender Zelle speichern falls möglich
 		if (m_GridOcc[index] < MAXCOUNT)
@@ -143,6 +157,7 @@ vector<int> SPHSystemSimulator::X_SortBalls()
 }
 
 // überprüfe Zellennachbarn auf Überschneidungen
+// pi_iNeighborRadius: 1 für Kollision Detektion, KERNELRADIUS / (2*GRIDRADIUS) für SPH Simulation
 vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborRadius, vector<int> notEmpty)
 {
 	vector<int> neighbors;
@@ -175,36 +190,36 @@ vector<int> SPHSystemSimulator::X_CheckNeighbors(int pi_iCell, int pi_iNeighborR
 void SPHSystemSimulator::X_ApplyBoundingBox(Particle & particle)
 {
 	// Positive Richtung clampen und Ball zurückspringen
-	if (particle.Position.x > m_v3BoxSize.x)
+	if (particle.Position.x > m_v3BoxSize.x - GRIDRADIUS)
 	{
-		particle.Position.x = m_v3BoxSize.x;
+		particle.Position.x = m_v3BoxSize.x - GRIDRADIUS;
 		particle.Velocity.x = -0.5f * particle.Velocity.x;
 	}
-	if (particle.Position.y > m_v3BoxSize.y)
+	if (particle.Position.y > m_v3BoxSize.y - GRIDRADIUS)
 	{
-		particle.Position.y = m_v3BoxSize.y;
-		particle.Velocity.y = -0.1f * particle.Velocity.y;
+		particle.Position.y = m_v3BoxSize.y - GRIDRADIUS;
+		particle.Velocity.y = -0.9f * particle.Velocity.y;
 	}
-	if (particle.Position.z > m_v3BoxSize.z)
+	if (particle.Position.z > m_v3BoxSize.z - GRIDRADIUS)
 	{
-		particle.Position.z = m_v3BoxSize.z;
+		particle.Position.z = m_v3BoxSize.z - GRIDRADIUS;
 		particle.Velocity.z = -0.5f * particle.Velocity.z;
 	}
 
 	// Negative Richtung clampen
-	if (particle.Position.x < 0.0f)
+	if (particle.Position.x < GRIDRADIUS)
 	{
-		particle.Position.x = 0.0f;
+		particle.Position.x = GRIDRADIUS;
 		particle.Velocity.x = -0.5f * particle.Velocity.x;
 	}
 	if (particle.Position.y < 0.0f)
 	{
 		particle.Position.y = 0.0f;
-		particle.Velocity.y = -0.1f * particle.Velocity.y;
+		particle.Velocity.y = -0.2f * particle.Velocity.y;
 	}
-	if (particle.Position.z < 0.0f)
+	if (particle.Position.z < GRIDRADIUS)
 	{
-		particle.Position.z = 0.0f;
+		particle.Position.z = GRIDRADIUS;
 		particle.Velocity.z = -0.5f * particle.Velocity.z;
 	}
 }
@@ -244,17 +259,8 @@ void SPHSystemSimulator::X_CalcPressureForceNaive()
 }
 
 // Druckkraft berechnen
-void SPHSystemSimulator::X_CalcPressureForce()
+void SPHSystemSimulator::X_CalcPressureForce(vector<int> toCheck)
 {
-	// Grid zurücksetzen
-	for (int i = 0; i < m_GridOcc.size(); i++)
-	{
-		m_GridOcc[i] = 0;
-	}
-
-	// Sortiere Partikel in Zellen, speichere belegte Zellen
-	vector<int> toCheck = X_SortBalls();
-
 	// Bestimme Dichte
 	for (int currCell = 0; currCell < toCheck.size(); currCell++)
 	{
@@ -321,6 +327,47 @@ void SPHSystemSimulator::X_CalcPressureForce()
 	}
 }
 
+void SPHSystemSimulator::X_ApplyCollision(Particle & p1, Particle & p2, function<float(float)> & kernel, float fScaler)
+{
+	// Zum Achten: man braucht nur die Kraft für Ball 1 aktualisieren, nicht für Ball 2, sonst ist jede Kraft zweimal berechnet
+	// Für Kollisionen am Anfang vom Zeitschritt
+	float dist = sqrtf(p1.Position.squaredDistanceTo(p2.Position));
+	if (dist <= 2.0f * GRIDRADIUS)
+	{
+		Vec3 collNorm = getNormalized(p1.Position - p2.Position);
+		p1.Force += -fScaler * kernel(dist / GRIDRADIUS * 2.0f) * collNorm;
+	}
+}
+
+// Löst Kollisionen auf
+void SPHSystemSimulator::collisionResolve(function<float(float)> & kernel, float fScaler, vector<int> toCheck)
+{
+	// Für alle belegten Zellen
+	for (int i = 0; i < toCheck.size(); i++)
+	{
+		// Bestimme Nachbarindizes
+		vector<int> neighbors = X_CheckNeighbors(toCheck[i], 1, toCheck);
+		// Für alle Bälle in der Zelle
+		for (int k = 0; k < m_GridOcc[toCheck[i]]; k++)
+		{
+			// Für alle Nachbarn
+			for (int j = 0; j < neighbors.size(); j++)
+			{
+				for (int l = 0; l < m_GridOcc[neighbors[j]]; l++)
+				{
+					int own = (toCheck[i] * MAXCOUNT) + k;
+					int neighbor = (neighbors[j] * MAXCOUNT) + l;
+					// Überspringe Kollision mit selbst
+					if (own == neighbor)
+						continue;
+					// Löse Kollision auf
+					X_ApplyCollision(*m_ParticleGrid[own], *m_ParticleGrid[neighbor], kernel, fScaler);
+				}
+			}
+		}
+	}	
+}
+
 #pragma endregion
 
 // Initialisiere UI
@@ -332,7 +379,8 @@ void SPHSystemSimulator::initUI(DrawingUtilitiesClass * DUC)
 // Setzte Simulation zurück
 void SPHSystemSimulator::reset()
 {
-	m_v3BoxPos = m_v3BoxSize = m_v3Shifting = Vec3(0.0f);
+	m_v3BoxPos = m_v3BoxSize = Vec3(0.0f);
+	m_v3Shifting = Vec3(0.0f, GRIDRADIUS, 0.0f);
 	m_v2Oldtrackmouse.x = m_v2Oldtrackmouse.y = 0;
 	m_v2Trackmouse.x = m_v2Trackmouse.y = 0;
 	m_iGridWidth = 0;
@@ -368,6 +416,7 @@ void SPHSystemSimulator::externalForcesCalculations(float timeElapsed)
 {
 	Point2D mouseDiff;
 	Vec3 mouseForce(0.0f);
+	
 	// Berechne Differenz
 	mouseDiff.x = m_v2Trackmouse.x - m_v2Oldtrackmouse.x;
 	mouseDiff.y = m_v2Trackmouse.y - m_v2Oldtrackmouse.y;
@@ -379,37 +428,65 @@ void SPHSystemSimulator::externalForcesCalculations(float timeElapsed)
 		// Vektor bestehend aus Mausverschiebung
 		Vec3 inputView = Vec3((float)-mouseDiff.x, (float)mouseDiff.y, 0);
 		// Bestimme Kraft im Worldspace mit Faktor
-		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.001f;
+		mouseForce = worldViewInv.transformVectorNormal(inputView) * -MOUSEFORCESCALE;
 	}
-	// Kraft anwenden
-	for (auto particle = m_Particles.begin(); particle != m_Particles.end(); particle++)
-	{
-		//particle->Force = Vec3(0, -1.0f * m_fGravity * PARTICLEMASS, 0);
-		//particle->Force += mouseForce;
-	}
+	m_v3MousForce = mouseForce;
 }
 
 // Simulation updaten
 void SPHSystemSimulator::simulateTimestep(float timeStep)
 {
+	Vec3 gravity = Vec3(0, -GRAVITY * PARTICLEMASS, 0);
+	Vec3 damping = Vec3(0.0f);
+	// erster halber Zeitschritt
+	
+	// Position und Velocity kopieren
+	for (auto particle = m_Particles.begin(); particle != m_Particles.end(); particle++)
+	{
+		particle->OldPosition = particle->Position;
+		particle->OldVelocity = particle->Velocity;
+	}
+	// Bälle in Grid sortieren
+	vector<int> toCheck = X_SortBalls();
 	// Berechne Druck
 	// X_CalcPressureForceNaive();
-	X_CalcPressureForce();
-	
-	// Aktualisiere Geschwindigkeit/Position (Leap Frog, aber jetzt nur Explizit Euler)
+	X_CalcPressureForce(toCheck);
+	// Kollisionen behandeln
+	collisionResolve(m_CollisionKernels[1], COLLISIONSCALE, toCheck);
+	// Aktualisiere Geschwindigkeit/Position (Midpoint)
 	for (auto particle = m_Particles.begin(); particle != m_Particles.end(); particle++)
 	{
 		// Zuerst Position aktualisieren, danach Velocity
-		particle->Position += timeStep * particle->Velocity;
-		particle->Velocity += timeStep * (particle->Force / PARTICLEMASS + Vec3(0.0f, -0.5f * m_fGravity, 0.0f));
-		// particle->Velocity += timeStep * (particle->Force / PARTICLEMASS);
+		damping = -DAMPING * particle->Velocity;
+		particle->Position += 0.5f * timeStep * particle->Velocity;
+		particle->Velocity += 0.5f * timeStep * (particle->Force + gravity + m_v3MousForce + damping) / PARTICLEMASS;
 		// Zurücksetzen
 		particle->Density = particle->Pressure = 0.0f;
 		particle->Force = Vec3(0.0f);
+	}	
+
+	// zweiter halber Zeitschritt
+
+	// Bälle in Grid sortieren
+	toCheck = X_SortBalls();
+	// Berechne Druck
+	// X_CalcPressureForceNaive();
+	X_CalcPressureForce(toCheck);
+	// Kollisionen behandeln
+	collisionResolve(m_CollisionKernels[1], COLLISIONSCALE, toCheck);
+	// Aktualisiere Geschwindigkeit/Position (Midpoint)
+	for (auto particle = m_Particles.begin(); particle != m_Particles.end(); particle++)
+	{
+		// Zuerst Position aktualisieren, danach Velocity
+		damping = -DAMPING * particle->Velocity;
+		particle->Position = particle->OldPosition + timeStep * particle->Velocity;
+		particle->Velocity = particle->OldVelocity + timeStep * (particle->Force + gravity + m_v3MousForce + damping) / PARTICLEMASS;
+		// Zurücksetzen
+		particle->Density = particle->Pressure = 0.0f;
+		particle->Force = particle->OldPosition = particle->OldVelocity = Vec3(0.0f);
 		// Als letztes Position clampen
 		X_ApplyBoundingBox(*particle);
-	}
-	
+	}	
 }
 
 #pragma endregion

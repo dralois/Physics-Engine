@@ -15,7 +15,7 @@
 #define PI 3.141592653f
 #define GRAVITY 9.81f
 // Variablen, die den Effekt stark beeinflussen können
-#define PARTICLEMASS 0.0005f
+#define PARTICLEMASS 0.001f
 #define FLUIDSTIFFNESS 0.0001f
 #define COLLISIONSCALE 8.0f
 

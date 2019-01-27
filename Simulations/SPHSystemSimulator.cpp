@@ -6,7 +6,7 @@
 // Get Testcases
 const char * SPHSystemSimulator::getTestCasesStr()
 {
-	return "Naive Collision, RB Impulse Collision";
+	return "Naive Collision Handling, RB Collision Handling with Impulse";
 }
 
 #pragma endregion

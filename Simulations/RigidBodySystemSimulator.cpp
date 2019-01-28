@@ -48,6 +48,27 @@ void RigidBodySystemSimulator::setVelocityOf(int i, Vec3 velocity)
 	m_Rigidbodies[i].LinVel = velocity;
 }
 
+vector<Vec3> RigidBodySystemSimulator::getCurrParticles()
+{
+	vector<Vec3> curr;
+	Rigidbody rb = m_Rigidbodies[0];
+	Vec3 trans, useless, scale;
+	rb.Scale.decompose(useless, scale, useless, useless);
+	rb.Translation.decompose(trans, useless, useless, useless);
+	// Speichert World Positionen in 0.1 Schritten
+	for (float x = -0.5 * scale.x; x <= 0.5 * scale.x; x += 0.2)
+	{
+		for (float y= -0.5 * scale.y; y <= 0.5 * scale.y; y += 0.2)
+		{
+			for (float z = -0.5 * scale.z; z <= 0.5 * scale.z; z += 0.2)
+			{
+				curr.push_back((trans + rb.Rotation * Vec3(x, y, z)).maximize(Vec3(0.0)));
+			}
+		}
+	}
+	return curr;
+}
+
 #pragma endregion
 
 #pragma region Events
@@ -223,6 +244,14 @@ void RigidBodySystemSimulator::drawFrame(ID3D11DeviceContext * pd3dImmediateCont
 		}
 		break;
 	default:
+		DUC->setUpLighting(Vec3(), 0.4*Vec3(1, 1, 1), 100, 0.6*Vec3(0.97, 0.86, 1));
+		// Zeichnet alle Rigidbodies
+		for (auto rigidbody = m_Rigidbodies.begin(); rigidbody != m_Rigidbodies.end(); rigidbody++)
+		{
+			Mat4 obj2World = rigidbody->Scale * rigidbody->Rotation *
+				rigidbody->Translation * DUC->g_camera.GetWorldMatrix();
+			DUC->drawRigidBody(obj2World);
+		}
 		break;
 	}
 }
@@ -285,7 +314,7 @@ void RigidBodySystemSimulator::externalForcesCalculations(float timeElapsed)
 		// Vektor bestehend aus Mausverschiebung
 		Vec3 inputView = Vec3((float)-mouseDiff.x, (float)mouseDiff.y, 0);
 		// Bestimme Kraft im Worldspace mit Faktor
-		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.01f;
+		mouseForce = worldViewInv.transformVectorNormal(inputView) * -0.1f;
 	}
 
 	// Wende Mausinteraktion an
@@ -343,6 +372,21 @@ void RigidBodySystemSimulator::simulateTimestep(float timeStep)
 		Vec3 trans, scale, rot, shear;
 		transMat.decompose(trans, scale, rot, shear);
 		trans += timeStep * rb->LinVel;
+
+		// Clamping
+		if (trans.x > 1.0)
+			trans.x = 1.0;
+		if (trans.y > 1.0)
+			trans.y = 1.0;
+		if (trans.z > 1.0)
+			trans.z = 1.0;
+		if (trans.x < 0.0)
+			trans.x = 0.0;
+		if (trans.y < 0.0)
+			trans.y = 0.0;
+		if (trans.z < 0.0)
+			trans.z = 0.0;
+
 		transMat.initTranslation(trans.x, trans.y, trans.z);
 		rb->Translation = transMat;
 		rb->LinVel += timeStep * (rb->Force / rb->Mass);
@@ -435,7 +479,7 @@ void RigidBodySystemSimulator::addRigidBody(Vec3 position, Vec3 size, float mass
 RigidBodySystemSimulator::RigidBodySystemSimulator()
 {
 	srand(time(NULL));
-	m_iTestCase = 0;
+	m_iTestCase = -1;
 	reset();
 }
 

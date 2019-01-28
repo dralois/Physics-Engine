@@ -44,6 +44,7 @@ public:
 	void addRigidBody(Vec3 position, Vec3 size, float mass);
 	void setOrientationOf(int i,Quat orientation);
 	void setVelocityOf(int i, Vec3 velocity);
+	vector<Vec3> getCurrParticles();
 
 private:
 	// Data Attributes

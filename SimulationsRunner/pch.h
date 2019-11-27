@@ -6,12 +6,12 @@
 #include <cmath>
 #include <iostream>
 // DrawingUtilitiesClass
-#include "DrawingUtilitiesClass.h"
+#include "../Simulations/DrawingUtilitiesClass.h"
 // Simulator
-#include "Simulator.h"
+#include "../Simulations/Simulator.h"
 // DirectX includes
 #include <DirectXMath.h>
-#include "util/vectorbase.h"
+#include "../Simulations/util/vectorbase.h"
 // Internal includes
-#include "util/util.h"
-#include "util/FFmpeg.h"
+#include "../Simulations/util/util.h"
+#include "../Simulations/util/FFmpeg.h"

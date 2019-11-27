@@ -8,25 +8,25 @@ using namespace GamePhysics;
 //#define ADAPTIVESTEP
 
 //#define TEMPLATE_DEMO
-//#define MASS_SPRING_SYSTEM
+#define MASS_SPRING_SYSTEM
 //#define RIGID_BODY_SYSTEM
 //#define SPHERE_SYSTEM
-#define SPH_SYSTEM
+//#define SPH_SYSTEM
 
 #ifdef TEMPLATE_DEMO
-#include "TemplateSimulator.h"
+#include "../Simulations/TemplateSimulator.h"
 #endif
 #ifdef MASS_SPRING_SYSTEM
-#include "MassSpringSystemSimulator.h"
+#include "../Simulations/MassSpringSystemSimulator.h"
 #endif
 #ifdef RIGID_BODY_SYSTEM
-#include "RigidBodySystemSimulator.h"
+#include "../Simulations/RigidBodySystemSimulator.h"
 #endif
 #ifdef SPHERE_SYSTEM
-#include "SphereSystemSimulator.h"
+#include "../Simulations/SphereSystemSimulator.h"
 #endif
 #ifdef SPH_SYSTEM
-#include "SPHSystemSimulator.h"
+#include "../Simulations/SPHSystemSimulator.h"
 #endif
 
 DrawingUtilitiesClass * g_pDUC;
